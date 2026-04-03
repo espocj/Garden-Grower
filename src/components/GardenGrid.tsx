@@ -7,10 +7,9 @@ import PlantingModal from "./PlantingModal";
 
 interface Props {
   plantings: Planting[];
-  onSave: (data: Partial<Planting>, duplicatePlotIds: string[]) => void;
+  onSave: (data: Partial<Planting>) => void;
 }
 
-// RESTORED: Emoji Dictionary for common plants
 const VEGE_EMOJI: Record<string, string> = {
   tomato: "🍅", basil: "🌿", pepper: "🫑", "bell pepper": "🫑",
   zucchini: "🥒", cucumber: "🥒", kale: "🥬", eggplant: "🍆",
@@ -32,13 +31,18 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star key={n} size={8} fill={n <= rating ? "#FBBF24" : "transparent"} color={n <= rating ? "#FBBF24" : "rgba(255,255,255,0.1)"} />
+        <Star 
+          key={n} 
+          size={8} 
+          fill={n <= rating ? "#FBBF24" : "transparent"} 
+          color={n <= rating ? "#FBBF24" : "rgba(255,255,255,0.1)"} 
+        />
       ))}
     </div>
   );
 }
 
-function PlotCell({ plot, planting, index, onClick }: { plot: Plot; planting?: Planting; index: number; onClick: () => void }) {
+function PlotCell({ plot, planting, onClick }: { plot: Plot; planting?: Planting; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   if (plot.is_walkway) return <div className="bg-transparent opacity-0" />;
 
@@ -75,25 +79,54 @@ function PlotCell({ plot, planting, index, onClick }: { plot: Plot; planting?: P
 
 export default function GardenGrid({ plantings, onSave }: Props) {
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
-  const plantingMap = new Map(plantings.map(p => [p.plot_id, p]));
+  
+  // Create a map linking every individual plot_id to its parent Planting object
+  const plantingMap = new Map<string, Planting>();
+  plantings.forEach(p => {
+    if (p.plot_ids) {
+      p.plot_ids.forEach(id => plantingMap.set(id, p));
+    }
+  });
 
   return (
     <div className="w-full px-2 lg:px-12">
-      <div className="grid w-full gap-1.5" style={{ gridTemplateColumns: '40px repeat(15, minmax(0, 1fr))' }}>
+      <div 
+        className="grid w-full gap-1.5"
+        style={{ gridTemplateColumns: '40px repeat(15, minmax(0, 1fr))' }}
+      >
+        {/* Header Row */}
         <div className="h-8 flex items-center justify-center font-mono text-[9px] text-[#3e2723]/40 border-b border-[#3e2723]/10">R\C</div>
         {Array.from({ length: 15 }).map((_, i) => (
           <div key={i} className="h-8 flex items-center justify-center font-mono text-[9px] text-[#3e2723]/60 font-bold uppercase border-b border-[#3e2723]/10">{i+1}</div>
         ))}
+
+        {/* Plots */}
         {Array.from({ length: 7 }).map((_, r) => (
           <React.Fragment key={r}>
             <div className="flex items-center justify-center font-mono text-[9px] text-[#3e2723]/60 font-bold uppercase">R{r+1}</div>
-            {MOCK_PLOTS.slice(r * 15, (r + 1) * 15).map((plot, i) => (
-              <PlotCell key={plot.id} plot={plot} planting={plantingMap.get(plot.id)} index={r*15+i} onClick={() => !plot.is_walkway && setSelectedPlot(plot)} />
+            {MOCK_PLOTS.slice(r * 15, (r + 1) * 15).map((plot) => (
+              <PlotCell 
+                key={plot.id} 
+                plot={plot} 
+                planting={plantingMap.get(plot.id)} 
+                onClick={() => !plot.is_walkway && setSelectedPlot(plot)} 
+              />
             ))}
           </React.Fragment>
         ))}
       </div>
-      {selectedPlot && <PlantingModal plot={selectedPlot} existingPlanting={plantingMap.get(selectedPlot.id)} onClose={() => setSelectedPlot(null)} onSave={onSave} />}
+
+      {selectedPlot && (
+        <PlantingModal 
+          plot={selectedPlot} 
+          existingPlanting={plantingMap.get(selectedPlot.id)} 
+          onClose={() => setSelectedPlot(null)} 
+          onSave={(data) => {
+            onSave(data);
+            setSelectedPlot(null);
+          }} 
+        />
+      )}
     </div>
   );
 }
