@@ -20,7 +20,6 @@ export default function Home() {
 
   const availableYears = useMemo(() => [2030, 2029, 2028, 2027, 2026, 2025, 2024], []);
 
-  // 1. Listen for Authentication
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -33,22 +32,18 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Fetch Live Data from Supabase
   const fetchPlantings = useCallback(async () => {
     if (!session?.user) return;
     
     setIsLoading(true);
-    // Row Level Security ensures this ONLY gets rows where user_id matches the logged-in user
     const { data, error } = await supabase
       .from('plantings')
       .select('*')
       .order('year', { ascending: false });
 
-    if (error) {
-      console.error("Error fetching data:", error);
-    } else if (data) {
-      setPlantings(data as Planting[]);
-    }
+    if (error) console.error("Error fetching data:", error);
+    else if (data) setPlantings(data as Planting[]);
+    
     setIsLoading(false);
   }, [session]);
 
@@ -56,7 +51,6 @@ export default function Home() {
     if (session) fetchPlantings();
   }, [session, fetchPlantings]);
 
-  // 3. Save directly to Supabase
   const handleSave = useCallback(async (data: Partial<Planting>) => {
     if (!session?.user) return;
 
@@ -76,19 +70,23 @@ export default function Home() {
       will_plant_again: data.will_plant_again ?? true,
     };
 
-    // If data.id exists and isn't a local mock string, update the row
     if (data.id && !data.id.startsWith('planting-')) {
       await supabase.from('plantings').update(payload).eq('id', data.id);
     } else {
-      // Otherwise insert a new row
       await supabase.from('plantings').insert([payload]);
     }
 
-    // Refresh data after saving
     fetchPlantings();
   }, [currentYear, session, fetchPlantings]);
 
-  // Ensure user is logged in before rendering the main app
+  // NEW: Delete Function
+  const handleDelete = useCallback(async (id: string) => {
+    if (!session?.user) return;
+    
+    await supabase.from('plantings').delete().eq('id', id);
+    fetchPlantings();
+  }, [session, fetchPlantings]);
+
   if (!session) {
     return <Login />;
   }
@@ -152,9 +150,9 @@ export default function Home() {
 
       <main className="flex-1 w-full max-w-full mx-auto px-4 py-6">
         {activeTab === "garden" ? (
-          <GardenGrid plantings={currentYearPlantings} onSave={handleSave} />
+          <GardenGrid plantings={currentYearPlantings} onSave={handleSave} onDelete={handleDelete} />
         ) : (
-          <HistoricalDatabase plantings={plantings} onSave={handleSave} />
+          <HistoricalDatabase plantings={plantings} onSave={handleSave} onDelete={handleDelete} />
         )}
       </main>
 
