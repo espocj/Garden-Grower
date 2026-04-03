@@ -10,7 +10,7 @@ export interface Plot {
 
 export interface Planting {
   id: string;
-  plot_ids: string[]; // <-- Updated to support multiple plots per plant
+  plot_ids: string[];
   year: number;
   image_url?: string;
   vegetable_name: string;
