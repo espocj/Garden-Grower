@@ -21,7 +21,7 @@ export default function Home() {
       ...data,
       id: data.id ?? `planting-${Date.now()}`,
       year: currentYear,
-      plot_ids: data.plot_ids || [], // Saving the array natively
+      plot_ids: data.plot_ids || [], 
       vegetable_name: data.vegetable_name ?? "",
       garden_plant_date: data.garden_plant_date ?? new Date().toISOString().split("T")[0],
       status_rating: data.status_rating ?? 3,
@@ -35,12 +35,6 @@ export default function Home() {
       return [...filtered, newEntry];
     });
   }, [currentYear]);
-
-  const handleUpdate = useCallback((id: string, updates: Partial<Planting>) => {
-    setPlantings((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
-  }, []);
 
   const currentYearPlantings = plantings.filter((p) => p.year === currentYear);
   const totalPlots = MOCK_PLOTS.filter((p) => !p.is_walkway).length;
@@ -95,7 +89,7 @@ export default function Home() {
         {activeTab === "garden" ? (
           <GardenGrid plantings={currentYearPlantings} onSave={handleSave} />
         ) : (
-          <HistoricalDatabase plantings={plantings} onUpdate={handleUpdate} />
+          <HistoricalDatabase plantings={plantings} onSave={handleSave} />
         )}
       </main>
 
