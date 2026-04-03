@@ -1,44 +1,100 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { Leaf, ChevronDown } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { Leaf, ChevronDown, LogOut } from "lucide-react";
 import WeatherBanner from "@/components/WeatherBanner";
 import GardenGrid from "@/components/GardenGrid";
 import HistoricalDatabase from "@/components/HistoricalDatabase";
-import { MOCK_PLANTINGS, Planting, MOCK_PLOTS } from "@/lib/mockData";
+import Login from "@/components/Login";
+import { Planting, MOCK_PLOTS } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
 
 type Tab = "garden" | "history";
 
 export default function Home() {
+  const [session, setSession] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<Tab>("garden");
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [plantings, setPlantings] = useState<Planting[]>(MOCK_PLANTINGS);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [plantings, setPlantings] = useState<Planting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const availableYears = useMemo(() => [2030, 2029, 2028, 2027, 2026, 2025, 2024], []);
 
-  const handleSave = useCallback((data: Partial<Planting>) => {
-    const newEntry: Planting = {
-      ...data,
-      id: data.id ?? `planting-${Date.now()}`,
+  // 1. Listen for Authentication
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 2. Fetch Live Data from Supabase
+  const fetchPlantings = useCallback(async () => {
+    if (!session?.user) return;
+    
+    setIsLoading(true);
+    // Row Level Security ensures this ONLY gets rows where user_id matches the logged-in user
+    const { data, error } = await supabase
+      .from('plantings')
+      .select('*')
+      .order('year', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching data:", error);
+    } else if (data) {
+      setPlantings(data as Planting[]);
+    }
+    setIsLoading(false);
+  }, [session]);
+
+  useEffect(() => {
+    if (session) fetchPlantings();
+  }, [session, fetchPlantings]);
+
+  // 3. Save directly to Supabase
+  const handleSave = useCallback(async (data: Partial<Planting>) => {
+    if (!session?.user) return;
+
+    const payload = {
+      user_id: session.user.id,
       year: currentYear,
-      plot_ids: data.plot_ids || [], 
+      plot_ids: data.plot_ids || [],
       vegetable_name: data.vegetable_name ?? "",
+      emoji: data.emoji || null,
+      strain: data.strain || null,
+      seed_source: data.seed_source || null,
+      started_from: data.started_from ?? "seed",
+      seed_plant_date: data.seed_plant_date || null,
       garden_plant_date: data.garden_plant_date ?? new Date().toISOString().split("T")[0],
       status_rating: data.status_rating ?? 3,
-      started_from: data.started_from ?? "seed",
+      notes: data.notes || null,
       will_plant_again: data.will_plant_again ?? true,
-    } as Planting;
+    };
 
-    setPlantings((prev) => {
-      // Remove the old entry if editing, then add the new state
-      const filtered = prev.filter(p => p.id !== newEntry.id);
-      return [...filtered, newEntry];
-    });
-  }, [currentYear]);
+    // If data.id exists and isn't a local mock string, update the row
+    if (data.id && !data.id.startsWith('planting-')) {
+      await supabase.from('plantings').update(payload).eq('id', data.id);
+    } else {
+      // Otherwise insert a new row
+      await supabase.from('plantings').insert([payload]);
+    }
+
+    // Refresh data after saving
+    fetchPlantings();
+  }, [currentYear, session, fetchPlantings]);
+
+  // Ensure user is logged in before rendering the main app
+  if (!session) {
+    return <Login />;
+  }
 
   const currentYearPlantings = plantings.filter((p) => p.year === currentYear);
   const totalPlots = MOCK_PLOTS.filter((p) => !p.is_walkway).length;
-  // Calculate total individual plots occupied by flattening the arrays
   const plantedCount = new Set(currentYearPlantings.flatMap(p => p.plot_ids)).size;
 
   return (
@@ -77,8 +133,17 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-[#3e2723] font-bold bg-[#3e2723]/5 rounded-full px-4 py-1.5 border border-[#3e2723]/10">
-            {plantedCount} / {totalPlots} PLOTS
+          <div className="hidden lg:flex items-center gap-3">
+            <div className="flex items-center gap-2 text-[10px] font-mono text-[#3e2723] font-bold bg-[#3e2723]/5 rounded-full px-4 py-1.5 border border-[#3e2723]/10">
+              {isLoading ? "Syncing..." : `${plantedCount} / ${totalPlots} PLOTS`}
+            </div>
+            <button 
+              onClick={() => supabase.auth.signOut()}
+              className="p-1.5 text-[#3e2723]/40 hover:text-[#3e2723] transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </nav>
