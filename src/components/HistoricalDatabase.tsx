@@ -31,7 +31,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
   const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
   
-  // Default: All columns are visible
   const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(
     COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: true }), {})
   );
@@ -44,19 +43,16 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
     setVisibleCols(COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: true }), {}));
   };
 
-  // Derive unique years for the filter
   const uniqueYears = useMemo(() => {
     const years = new Set(plantings.map(p => p.year));
     return Array.from(years).sort((a, b) => b - a);
   }, [plantings]);
 
-  // Derive unique crops for the new Crop Filter
   const uniqueCrops = useMemo(() => {
     const crops = new Set(plantings.map(p => p.vegetable_name));
     return Array.from(crops).sort();
   }, [plantings]);
 
-  // Filter the data based on Year and Crop
   const filteredPlantings = useMemo(() => {
     return plantings.filter(p => {
       const matchesYear = filterYear === "All" || p.year.toString() === filterYear;
@@ -67,10 +63,8 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Toolbar (Forced high z-index to fix overlapping menu) ── */}
       <div className="relative z-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1c1a14]/80 p-4 rounded-xl border border-[#7a9a6e]/20 backdrop-blur-md shadow-lg">
         
-        {/* Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <select 
             value={filterYear}
@@ -91,7 +85,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
           </select>
         </div>
 
-        {/* Column Toggler */}
         <div className="relative w-full sm:w-auto flex justify-end">
           <button 
             onClick={() => setIsColumnMenuOpen(!isColumnMenuOpen)}
@@ -101,7 +94,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
             <span className="font-mono uppercase tracking-widest text-[10px]">Columns</span>
           </button>
 
-          {/* The Menu */}
           {isColumnMenuOpen && (
             <div className="absolute top-full right-0 mt-2 w-56 bg-[#2e2a1e] border border-[#7a9a6e]/40 rounded-xl shadow-2xl z-[100] overflow-hidden">
               <div className="p-3 border-b border-[#7a9a6e]/20 flex justify-between items-center bg-[#1c1a14]">
@@ -131,14 +123,14 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
         </div>
       </div>
 
-      {/* ── Data Table (Relative z-10 so it sits below the toolbar menu) ── */}
       <div className="relative z-10 w-full overflow-x-auto rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/60 backdrop-blur-md shadow-2xl scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-max">
           <thead>
             <tr className="border-b border-[#7a9a6e]/30 text-[10px] font-mono text-[#7a9a6e] uppercase tracking-widest bg-black/40 whitespace-nowrap">
               {visibleCols.year && <th className="py-4 px-5">Season</th>}
               {visibleCols.photo && <th className="py-4 px-5 text-center">Photo</th>}
-              {visibleCols.crop && <th className="py-4 px-5">Crop</th>}
+              {/* CENTERED HEADER */}
+              {visibleCols.crop && <th className="py-4 px-5 text-center">Crop</th>}
               {visibleCols.variety && <th className="py-4 px-5">Variety / Strain</th>}
               {visibleCols.source && <th className="py-4 px-5">Seed Source</th>}
               {visibleCols.started && <th className="py-4 px-5">Started From</th>}
@@ -173,10 +165,13 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
                   </td>
                 )}
 
+                {/* CENTERED DATA CELL */}
                 {visibleCols.crop && (
-                  <td className="py-3 px-5 flex items-center gap-2">
-                    <span className="text-lg">{p.emoji || "🌱"}</span>
-                    <span className="font-bold tracking-wide text-[#a3e635]">{p.vegetable_name}</span>
+                  <td className="py-3 px-5">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-lg">{p.emoji || "🌱"}</span>
+                      <span className="font-bold tracking-wide text-[#a3e635]">{p.vegetable_name}</span>
+                    </div>
                   </td>
                 )}
 
@@ -192,7 +187,7 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
 
                 {visibleCols.plantDate && (
                   <td className="py-3 px-5 text-xs font-mono text-[#a3e635]">
-                    {new Date(p.garden_plant_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(p.garden_plant_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "—"}
                   </td>
                 )}
 
@@ -227,7 +222,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
                   </td>
                 )}
 
-                {/* UPDATED: Notes column now wraps and stretches to ~2.5 columns wide */}
                 {visibleCols.notes && (
                   <td className="py-3 px-5">
                     <div className="max-w-[400px] whitespace-normal text-xs text-[#d4c49a]/70 leading-relaxed" title={p.notes}>
@@ -247,7 +241,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
         </table>
       </div>
 
-      {/* Pop up the editor modal when a row is clicked */}
       {editingPlanting && (
         <PlantingModal 
           plot={MOCK_PLOTS.find(pl => pl.id === editingPlanting.plot_ids?.[0]) || MOCK_PLOTS[0]}
