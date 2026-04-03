@@ -8,6 +8,7 @@ import PlantingModal from "./PlantingModal";
 interface Props {
   plantings: Planting[];
   onSave: (data: Partial<Planting>) => void;
+  onDelete?: (id: string) => void; // Added onDelete here
 }
 
 const COLUMNS = [
@@ -25,13 +26,12 @@ const COLUMNS = [
   { id: "notes", label: "Notes" },
 ];
 
-// Helper function to safely format dates and avoid Vercel build errors
 const formatDate = (dateString?: string) => {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-export default function HistoricalDatabase({ plantings, onSave }: Props) {
+export default function HistoricalDatabase({ plantings, onSave, onDelete }: Props) {
   const [filterYear, setFilterYear] = useState<string>("All");
   const [filterCrop, setFilterCrop] = useState<string>("All");
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
@@ -135,7 +135,7 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
             <tr className="border-b border-[#7a9a6e]/30 text-[10px] font-mono text-[#7a9a6e] uppercase tracking-widest bg-black/40 whitespace-nowrap">
               {visibleCols.year && <th className="py-4 px-5 align-middle">Season</th>}
               {visibleCols.photo && <th className="py-4 px-5 align-middle text-center">Photo</th>}
-              {visibleCols.crop && <th className="py-4 px-5 align-middle">Crop</th>}
+              {visibleCols.crop && <th className="py-4 px-5 align-middle text-center">Crop</th>}
               {visibleCols.variety && <th className="py-4 px-5 align-middle">Variety / Strain</th>}
               {visibleCols.source && <th className="py-4 px-5 align-middle">Seed Source</th>}
               {visibleCols.started && <th className="py-4 px-5 align-middle">Started From</th>}
@@ -170,10 +170,9 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
                   </td>
                 )}
 
-                {/* Vertical centering (align-middle) with horizontal left alignment */}
                 {visibleCols.crop && (
                   <td className="py-3 px-5 align-middle">
-                    <div className="flex items-center justify-start gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <span className="text-lg">{p.emoji || "🌱"}</span>
                       <span className="font-bold tracking-wide text-[#a3e635]">{p.vegetable_name}</span>
                     </div>
@@ -255,6 +254,7 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
             onSave(data);
             setEditingPlanting(null);
           }}
+          onDelete={onDelete}
         />
       )}
     </div>
