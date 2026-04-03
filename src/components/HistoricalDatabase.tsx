@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Planting, MOCK_PLOTS } from "@/lib/mockData";
-import { Star, Columns, Check, X as XIcon, ImageIcon } from "lucide-react";
+import { Star, Columns, Check, X as XIcon, ImageIcon, Plus } from "lucide-react";
 import PlantingModal from "./PlantingModal";
 
 interface Props {
@@ -26,7 +26,6 @@ const COLUMNS = [
   { id: "notes", label: "Notes" },
 ];
 
-// Helper to prevent Vercel Build parsing errors
 const formatDate = (dateString?: string | null) => {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -36,7 +35,10 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
   const [filterYear, setFilterYear] = useState<string>("All");
   const [filterCrop, setFilterCrop] = useState<string>("All");
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+  
+  // Track either an existing planting to edit, or true to create a new historical record
   const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
+  const [isAddingHistorical, setIsAddingHistorical] = useState(false);
   
   const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(
     COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: true }), {})
@@ -92,7 +94,17 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
           </select>
         </div>
 
-        <div className="relative w-full sm:w-auto flex justify-end">
+        <div className="relative w-full sm:w-auto flex justify-end gap-2">
+          
+          {/* NEW: Add Historical Record Button */}
+          <button 
+            onClick={() => setIsAddingHistorical(true)}
+            className="flex items-center gap-2 bg-[#7a9a6e] hover:bg-[#a3e635] text-[#1c1a14] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-md"
+          >
+            <Plus size={16} />
+            <span className="font-mono uppercase tracking-widest text-[10px]">Add Record</span>
+          </button>
+
           <button 
             onClick={() => setIsColumnMenuOpen(!isColumnMenuOpen)}
             className="flex items-center gap-2 bg-[#4a6741]/20 border border-[#7a9a6e]/40 hover:bg-[#4a6741]/40 text-[#d4c49a] px-4 py-2 rounded-lg text-sm transition-colors shadow-md"
@@ -246,9 +258,10 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
         </table>
       </div>
 
+      {/* Editing an existing planting */}
       {editingPlanting && (
         <PlantingModal 
-          plot={MOCK_PLOTS.find(pl => pl.id === editingPlanting.plot_ids?.[0]) || MOCK_PLOTS[0]}
+          plot={editingPlanting.plot_ids?.length ? MOCK_PLOTS.find(pl => pl.id === editingPlanting.plot_ids![0]) : null}
           existingPlanting={editingPlanting}
           onClose={() => setEditingPlanting(null)}
           onSave={(data) => {
@@ -256,6 +269,18 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
             setEditingPlanting(null);
           }}
           onDelete={onDelete}
+        />
+      )}
+
+      {/* Adding a new "Plot-less" Historical Record */}
+      {isAddingHistorical && (
+        <PlantingModal 
+          plot={null}
+          onClose={() => setIsAddingHistorical(false)}
+          onSave={(data) => {
+            onSave(data);
+            setIsAddingHistorical(false);
+          }}
         />
       )}
     </div>
