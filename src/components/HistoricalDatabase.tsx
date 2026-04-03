@@ -10,7 +10,6 @@ interface Props {
   onSave: (data: Partial<Planting>) => void;
 }
 
-// Category has been removed from this list
 const COLUMNS = [
   { id: "year", label: "Season" },
   { id: "photo", label: "Photo" },
@@ -39,6 +38,10 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
 
   const toggleColumn = (id: string) => {
     setVisibleCols(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const showAllColumns = () => {
+    setVisibleCols(COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: true }), {}));
   };
 
   // Derive unique years for the filter
@@ -98,11 +101,16 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
             <span className="font-mono uppercase tracking-widest text-[10px]">Columns</span>
           </button>
 
-          {/* The Menu (Now drops down clearly above the table) */}
+          {/* The Menu */}
           {isColumnMenuOpen && (
             <div className="absolute top-full right-0 mt-2 w-56 bg-[#2e2a1e] border border-[#7a9a6e]/40 rounded-xl shadow-2xl z-[100] overflow-hidden">
               <div className="p-3 border-b border-[#7a9a6e]/20 flex justify-between items-center bg-[#1c1a14]">
-                <span className="text-xs font-mono text-[#7a9a6e] uppercase tracking-widest">Show/Hide</span>
+                <button 
+                  onClick={showAllColumns} 
+                  className="text-[10px] font-mono font-bold text-[#a3e635] hover:text-[#f5f2e9] uppercase tracking-widest transition-colors"
+                >
+                  Show All
+                </button>
                 <button onClick={() => setIsColumnMenuOpen(false)} className="text-[#7a9a6e] hover:text-[#f5f2e9]"><XIcon size={14}/></button>
               </div>
               <div className="max-h-64 overflow-y-auto p-2 scrollbar-hide">
@@ -219,9 +227,10 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
                   </td>
                 )}
 
+                {/* UPDATED: Notes column now wraps and stretches to ~2.5 columns wide */}
                 {visibleCols.notes && (
                   <td className="py-3 px-5">
-                    <div className="max-w-[250px] truncate text-xs text-[#d4c49a]/70" title={p.notes}>
+                    <div className="max-w-[400px] whitespace-normal text-xs text-[#d4c49a]/70 leading-relaxed" title={p.notes}>
                       {p.notes || "—"}
                     </div>
                   </td>
@@ -229,7 +238,7 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
               </tr>
             )) : (
               <tr>
-                <td colSpan={13} className="py-12 text-center text-[#7a9a6e]">
+                <td colSpan={12} className="py-12 text-center text-[#7a9a6e]">
                   No planting records found for these filters.
                 </td>
               </tr>
@@ -241,7 +250,6 @@ export default function HistoricalDatabase({ plantings, onSave }: Props) {
       {/* Pop up the editor modal when a row is clicked */}
       {editingPlanting && (
         <PlantingModal 
-          // Find the primary plot details so the modal header displays correctly
           plot={MOCK_PLOTS.find(pl => pl.id === editingPlanting.plot_ids?.[0]) || MOCK_PLOTS[0]}
           existingPlanting={editingPlanting}
           onClose={() => setEditingPlanting(null)}
