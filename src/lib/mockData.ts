@@ -1,5 +1,4 @@
 // lib/mockData.ts
-
 export type StartedFrom = "seed" | "plant";
 export type PlantCategory = "Vegetable" | "Herb" | "Fruit" | "Flower" | "Other";
 
@@ -16,8 +15,8 @@ export interface Planting {
   year: number;
   image_url?: string;
   vegetable_name: string;
-  emoji?: string;      // Added for custom emoji support
-  category?: PlantCategory; 
+  emoji?: string;
+  category?: PlantCategory;
   strain?: string;
   seed_source?: string;
   started_from: StartedFrom;
@@ -32,8 +31,6 @@ export interface Planting {
 function buildPlots(): Plot[] {
   const plots: Plot[] = [];
   const walkwaySet = new Set<string>();
-
-  // Define walkways based on your specific garden layout
   for (let c = 2; c <= 14; c++) walkwaySet.add(`2-${c}`);
   walkwaySet.add("3-2"); walkwaySet.add("3-14");
   for (let c = 2; c <= 14; c++) walkwaySet.add(`4-${c}`);
@@ -55,54 +52,26 @@ function buildPlots(): Plot[] {
   }
   return plots;
 }
-
 export const MOCK_PLOTS: Plot[] = buildPlots();
 
-// ── Initial Mock Plantings ────────────────────────────────────
-const initialData: Array<Omit<Planting, "id">> = [
-  {
-    plot_id: "plot-001", year: 2026, vegetable_name: "Tomato",
-    emoji: "🍅", category: "Vegetable", strain: "Brandywine", 
-    seed_source: "Baker Creek", started_from: "seed",
-    garden_plant_date: "2026-05-15", status_rating: 5, will_plant_again: true,
-  },
-  {
-    plot_id: "plot-002", year: 2026, vegetable_name: "Basil",
-    emoji: "🌿", category: "Herb", strain: "Genovese", 
-    seed_source: "Botanical Interests", started_from: "seed",
-    garden_plant_date: "2026-05-20", status_rating: 4, will_plant_again: true,
-  },
-  {
-    plot_id: "plot-003", year: 2026, vegetable_name: "Bell Pepper",
-    emoji: "🫑", category: "Vegetable", strain: "California Wonder", 
-    started_from: "plant", garden_plant_date: "2026-05-22",
-    status_rating: 3, will_plant_again: true,
-  },
-  {
-    plot_id: "plot-004", year: 2026, vegetable_name: "Zucchini",
-    emoji: "🥒", category: "Vegetable", strain: "Black Beauty", 
-    started_from: "seed", garden_plant_date: "2026-05-18",
-    status_rating: 5, will_plant_again: true,
-  },
-  {
-    plot_id: "plot-005", year: 2026, vegetable_name: "Cucumber",
-    emoji: "🥒", category: "Vegetable", strain: "Marketmore 76", 
-    started_from: "seed", garden_plant_date: "2026-05-25",
-    status_rating: 4, will_plant_again: true,
-  },
-  {
-    plot_id: "plot-006", year: 2026, vegetable_name: "Kale",
-    emoji: "🥬", category: "Vegetable", strain: "Lacinato", 
-    started_from: "seed", garden_plant_date: "2026-04-28",
-    status_rating: 4, will_plant_again: true,
-  }
+// ── Expanded Mock Data for Multiple Years ─────────────────────
+const rawData: Array<Omit<Planting, "id">> = [
+  // 2026 (Live Season)
+  { plot_id: "plot-001", year: 2026, vegetable_name: "Tomato", emoji: "🍅", status_rating: 5, garden_plant_date: "2026-05-15", started_from: "seed", will_plant_again: true },
+  { plot_id: "plot-003", year: 2026, vegetable_name: "Bell Pepper", emoji: "🫑", status_rating: 4, garden_plant_date: "2026-05-20", started_from: "plant", will_plant_again: true },
+  
+  // 2025 (Last Season - Randomly Placed)
+  { plot_id: "plot-010", year: 2025, vegetable_name: "Zucchini", emoji: "🥒", status_rating: 5, garden_plant_date: "2025-05-10", started_from: "seed", will_plant_again: true },
+  { plot_id: "plot-025", year: 2025, vegetable_name: "Kale", emoji: "🥬", status_rating: 3, garden_plant_date: "2025-04-15", started_from: "seed", will_plant_again: true },
+  { plot_id: "plot-050", year: 2025, vegetable_name: "Carrot", emoji: "🥕", status_rating: 4, garden_plant_date: "2025-04-05", started_from: "seed", will_plant_again: true },
+  
+  // 2024 (Two Years Ago)
+  { plot_id: "plot-001", year: 2024, vegetable_name: "Jalapeño", emoji: "🌶️", status_rating: 5, garden_plant_date: "2024-05-22", started_from: "plant", will_plant_again: true },
+  { plot_id: "plot-015", year: 2024, vegetable_name: "Marigold", emoji: "🌼", status_rating: 5, garden_plant_date: "2024-05-15", started_from: "seed", will_plant_again: true },
+  { plot_id: "plot-100", year: 2024, vegetable_name: "Pumpkin", emoji: "🎃", status_rating: 4, garden_plant_date: "2024-06-05", started_from: "seed", will_plant_again: true },
 ];
 
-export const MOCK_PLANTINGS: Planting[] = initialData.map((p, i) => ({
+export const MOCK_PLANTINGS: Planting[] = rawData.map((p, i) => ({
   ...p,
   id: `planting-${String(i + 1).padStart(3, "0")}`,
 }));
-
-export function getPlantingForPlot(plotId: string, year = 2026): Planting | undefined {
-  return MOCK_PLANTINGS.find((p) => p.plot_id === plotId && p.year === year);
-}
