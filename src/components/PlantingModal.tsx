@@ -134,8 +134,8 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
             </div>
           </div>
 
-          {/* Smart Date Box Container: 3-cols if Seed, 2-cols if Plant */}
-          <div className={`grid grid-cols-1 gap-4 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50 ${form.started_from === 'seed' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+          {/* Smart Date Box Container: Strict 2-column grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
             <div>
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Started From</label>
               <select className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none appearance-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
@@ -144,6 +144,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </select>
             </div>
             
+            {/* If Seed: This drops into the 2nd column. If Plant, this disappears. */}
             {form.started_from === "seed" && (
               <div>
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Seed Start Date</label>
@@ -151,6 +152,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </div>
             )}
 
+            {/* If Seed: This drops to a new row (1st col). If Plant: This sits next to 'Started From' (2nd col) */}
             <div>
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Garden Plant Date *</label>
               <input type="date" required className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" value={form.garden_plant_date ?? ""} onChange={(e) => set("garden_plant_date", e.target.value)} />
