@@ -5,7 +5,7 @@ import { X, Star, Upload, Copy, ChevronDown, Maximize2, Trash2 } from "lucide-re
 import { MOCK_PLOTS, MOCK_PLANTINGS, Planting, Plot } from "@/lib/mockData";
 
 interface Props {
-  plot: Plot;
+  plot?: Plot | null; // Made optional/nullable for historical records
   existingPlanting?: Planting;
   onClose: () => void;
   onSave: (data: Partial<Planting>) => void;
@@ -16,7 +16,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const currentYear = existingPlanting?.year || new Date().getFullYear();
   
   const EMPTY_FORM: Partial<Planting> = {
-    plot_ids: [plot.id],
+    plot_ids: plot ? [plot.id] : [], // Start empty if no plot is provided
     vegetable_name: "",
     emoji: "",
     strain: "",
@@ -38,14 +38,16 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const occupiedThisYear = new Set(
     MOCK_PLANTINGS.filter(p => p.year === currentYear && p.id !== existingPlanting?.id).flatMap(p => p.plot_ids || [])
   );
-  const emptyPlots = MOCK_PLOTS.filter(p => !p.is_walkway && !occupiedThisYear.has(p.id) && p.id !== plot.id);
+  
+  // Safely check against plot?.id
+  const emptyPlots = MOCK_PLOTS.filter(p => !p.is_walkway && !occupiedThisYear.has(p.id) && p.id !== plot?.id);
 
   function set(key: keyof Planting, value: unknown) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
   function toggleDupe(plotId: string) {
-    const currentIds = form.plot_ids || [plot.id];
+    const currentIds = form.plot_ids || (plot ? [plot.id] : []);
     const newIds = currentIds.includes(plotId) 
       ? currentIds.filter(id => id !== plotId) 
       : [...currentIds, plotId];
@@ -54,7 +56,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const finalPlotIds = form.plot_ids && form.plot_ids.length > 0 ? form.plot_ids : [plot.id];
+    const finalPlotIds = form.plot_ids && form.plot_ids.length > 0 ? form.plot_ids : (plot ? [plot.id] : []);
     onSave({ ...form, status_rating: rating, plot_ids: finalPlotIds });
   }
 
@@ -64,15 +66,15 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const plotLabel = `Row ${plot.grid_row}, Col ${plot.grid_col}`;
-  const currentPlotIds = form.plot_ids || [plot.id];
+  // Smart label based on whether a plot was passed in
+  const plotLabel = plot ? `Row ${plot.grid_row}, Col ${plot.grid_col}` : "Historical Record";
+  const currentPlotIds = form.plot_ids || (plot ? [plot.id] : []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,8,4,0.75)", backdropFilter: "blur(6px)" }}>
-      {/* Changed to flex-col and overflow-hidden to bound the children properly */}
       <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, #1c1a14 0%, #2e2a1e 100%)", border: "1px solid rgba(122,154,110,0.3)", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
         
-        {/* Header - Now fixed at the top, removed sticky to prevent layout bugs */}
+        {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 z-20 bg-[#1c1a14] border-b border-[#7a9a6e]/20">
           <div>
             <h2 className="font-display text-xl text-[#f5f2e9]">{existingPlanting ? existingPlanting.vegetable_name : "New Planting"}</h2>
@@ -81,7 +83,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
           <button onClick={onClose} className="rounded-full p-2 text-[#d4c49a] hover:bg-[#7a9a6e]/20 transition-colors"><X className="w-5 h-5" /></button>
         </div>
 
-        {/* Dedicated scrolling container for the form body */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full">
           <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-5 w-full">
 
@@ -126,20 +127,22 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-              <div className="min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+              <div className="sm:col-span-1 min-w-0">
+                <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Season Year</label>
+                <input type="number" className="w-full min-w-0 p-2.5 rounded-lg bg-black/30 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635]" value={form.year ?? currentYear} onChange={(e) => set("year", Number(e.target.value))} />
+              </div>
+              <div className="sm:col-span-1 min-w-0">
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Strain / Variety</label>
                 <input className="w-full min-w-0 p-2.5 rounded-lg bg-black/30 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635]" placeholder="e.g. Brandywine" value={form.strain ?? ""} onChange={(e) => set("strain", e.target.value)} />
               </div>
-              <div className="min-w-0">
+              <div className="sm:col-span-1 min-w-0">
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Seed Source</label>
                 <input className="w-full min-w-0 p-2.5 rounded-lg bg-black/30 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635]" placeholder="e.g. Baker Creek" value={form.seed_source ?? ""} onChange={(e) => set("seed_source", e.target.value)} />
               </div>
             </div>
 
-            {/* Smart Date Container */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50 w-full">
-              
               <div className="min-w-0">
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Started From</label>
                 <select className="w-full min-w-0 px-2 py-2.5 text-sm rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none appearance-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
@@ -175,7 +178,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                   onChange={(e) => set("garden_plant_date", e.target.value)} 
                 />
               </div>
-
             </div>
 
             <div>
@@ -203,6 +205,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               />
             </div>
 
+            {/* We only show the Multi-Select plot picker if emptyPlots exist */}
             {emptyPlots.length > 0 && (
               <div className="rounded-xl p-4 bg-[#4a6741]/10 border border-[#7a9a6e]/20 w-full">
                 <button type="button" className="flex items-center gap-2 w-full text-left min-w-0" onClick={() => setDupeOpen(!dupeOpen)}>
@@ -229,7 +232,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </div>
             )}
 
-            {/* Footer Actions with Delete Button */}
             <div className="flex gap-3 pt-4 mt-2 border-t border-[#7a9a6e]/20 w-full">
               {existingPlanting && onDelete && (
                 <button 
@@ -247,7 +249,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 </button>
               )}
               <button type="submit" className="flex-1 min-w-0 py-3 rounded-lg font-bold text-[#1c1a14] bg-[#7a9a6e] hover:bg-[#a3e635] transition-colors shadow-lg truncate">
-                {existingPlanting ? "Update Database" : `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}`}
+                {existingPlanting ? "Update Database" : plot ? `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}` : "Save Historical Record"}
               </button>
               <button type="button" onClick={onClose} className="flex-shrink-0 px-6 py-3 rounded-lg text-[#d4c49a] border border-[#d4c49a]/30 hover:bg-[#d4c49a]/10 transition-colors">
                 Cancel
