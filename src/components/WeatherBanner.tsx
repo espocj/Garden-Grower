@@ -86,18 +86,27 @@ export default function WeatherBanner() {
 
         <div style={{ width: "1px", height: "32px", background: "rgba(122,154,110,0.2)" }} className="hidden md:block" />
 
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4" style={{ color: "var(--sky)" }} />
-          <span className="font-mono text-[0.7rem]" style={{ color: "var(--cream)" }}>
-            {rainNext ? new Date(rainNext.dt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "No Rain"}
-          </span>
-        </div>
+        {/* Updated Rain and Frost blocks with headers matching the Days */}
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <span className="font-mono" style={{ fontSize: "0.6rem", letterSpacing: "0.1em", color: "var(--sage)", textTransform: "uppercase" }}>Next Rain</span>
+            <div className="flex items-center gap-1.5">
+              <Droplets className="w-4 h-4" style={{ color: "var(--sky)" }} />
+              <span className="font-mono text-[0.7rem]" style={{ color: "var(--cream)" }}>
+                {rainNext ? new Date(rainNext.dt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "Clear"}
+              </span>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Snowflake className="w-4 h-4" style={{ color: "var(--frost)" }} />
-          <span className="font-mono text-[0.7rem]" style={{ color: "var(--cream)" }}>
-            {frostEntry ? new Date(frostEntry.dt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "No Frost"}
-          </span>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <span className="font-mono" style={{ fontSize: "0.6rem", letterSpacing: "0.1em", color: "var(--sage)", textTransform: "uppercase" }}>Frost Risk</span>
+            <div className="flex items-center gap-1.5">
+              <Snowflake className="w-4 h-4" style={{ color: "var(--frost)" }} />
+              <span className="font-mono text-[0.7rem]" style={{ color: "var(--cream)" }}>
+                {frostEntry ? new Date(frostEntry.dt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "None"}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2 font-mono text-[0.7rem]" style={{ color: "var(--straw)" }}>
