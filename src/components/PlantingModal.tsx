@@ -134,11 +134,9 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
             </div>
           </div>
 
-          {/* Smart Date Box Container: Symmetrical balance fix */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
-            
-            {/* If Seed is selected, this spans both columns to push dates to the next row */}
-            <div className={form.started_from === 'seed' ? 'sm:col-span-2' : ''}>
+          {/* Smart Date Container: Locked to 3-columns so boxes never stretch too wide */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
+            <div>
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Started From</label>
               <select className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none appearance-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
                 <option value="seed">Seed</option>
@@ -146,11 +144,20 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </select>
             </div>
             
-            {/* ColorScheme: dark forces iOS to show the native date placeholder */}
+            {/* Seed Date features a trick to prevent the iOS Safari 'black box' bug */}
             {form.started_from === "seed" && (
               <div>
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Seed Start Date</label>
-                <input type="date" style={{ colorScheme: "dark" }} className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" value={form.seed_plant_date ?? ""} onChange={(e) => set("seed_plant_date", e.target.value)} />
+                <input 
+                  type={form.seed_plant_date ? "date" : "text"} 
+                  placeholder="mm/dd/yyyy"
+                  onFocus={(e) => (e.currentTarget.type = "date")}
+                  onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
+                  style={{ colorScheme: "dark" }} 
+                  className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
+                  value={form.seed_plant_date ?? ""} 
+                  onChange={(e) => set("seed_plant_date", e.target.value)} 
+                />
               </div>
             )}
 
