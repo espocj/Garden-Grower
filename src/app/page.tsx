@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { Leaf, Database, Sprout, ChevronDown, Activity } from "lucide-react";
+import { Leaf, ChevronDown } from "lucide-react";
 import WeatherBanner from "@/components/WeatherBanner";
 import GardenGrid from "@/components/GardenGrid";
 import HistoricalDatabase from "@/components/HistoricalDatabase";
@@ -16,12 +16,12 @@ export default function Home() {
 
   const availableYears = useMemo(() => [2030, 2029, 2028, 2027, 2026, 2025, 2024], []);
 
-  const handleSave = useCallback((data: Partial<Planting>, duplicatePlotIds: string[]) => {
+  const handleSave = useCallback((data: Partial<Planting>) => {
     const newEntry: Planting = {
       ...data,
       id: data.id ?? `planting-${Date.now()}`,
       year: currentYear,
-      plot_id: data.plot_id!,
+      plot_ids: data.plot_ids || [], // Saving the array natively
       vegetable_name: data.vegetable_name ?? "",
       garden_plant_date: data.garden_plant_date ?? new Date().toISOString().split("T")[0],
       status_rating: data.status_rating ?? 3,
@@ -30,21 +30,27 @@ export default function Home() {
     } as Planting;
 
     setPlantings((prev) => {
-      const filtered = prev.filter(p => !(p.plot_id === newEntry.plot_id && p.year === currentYear));
+      // Remove the old entry if editing, then add the new state
+      const filtered = prev.filter(p => p.id !== newEntry.id);
       return [...filtered, newEntry];
     });
   }, [currentYear]);
 
+  const handleUpdate = useCallback((id: string, updates: Partial<Planting>) => {
+    setPlantings((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+    );
+  }, []);
+
   const currentYearPlantings = plantings.filter((p) => p.year === currentYear);
   const totalPlots = MOCK_PLOTS.filter((p) => !p.is_walkway).length;
-  const plantedCount = new Set(currentYearPlantings.map((p) => p.plot_id)).size;
+  // Calculate total individual plots occupied by flattening the arrays
+  const plantedCount = new Set(currentYearPlantings.flatMap(p => p.plot_ids)).size;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#c4b396] text-[#2d241e]">
-      {/* ── Navigation ── */}
       <nav className="sticky top-0 z-50 bg-[#c4b396]/95 backdrop-blur-md border-b border-[#3e2723]/10">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#3e2723] flex items-center justify-center shadow-md">
@@ -89,7 +95,7 @@ export default function Home() {
         {activeTab === "garden" ? (
           <GardenGrid plantings={currentYearPlantings} onSave={handleSave} />
         ) : (
-          <HistoricalDatabase plantings={plantings} onUpdate={() => {}} />
+          <HistoricalDatabase plantings={plantings} onUpdate={handleUpdate} />
         )}
       </main>
 
