@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Star, Upload, Copy, ChevronDown, Maximize2 } from "lucide-react";
+import { X, Star, Upload, Copy, ChevronDown, Maximize2, Trash2 } from "lucide-react";
 import { MOCK_PLOTS, MOCK_PLANTINGS, Planting, Plot } from "@/lib/mockData";
 
 interface Props {
@@ -9,9 +9,10 @@ interface Props {
   existingPlanting?: Planting;
   onClose: () => void;
   onSave: (data: Partial<Planting>) => void;
+  onDelete?: (id: string) => void;
 }
 
-export default function PlantingModal({ plot, existingPlanting, onClose, onSave }: Props) {
+export default function PlantingModal({ plot, existingPlanting, onClose, onSave, onDelete }: Props) {
   const currentYear = existingPlanting?.year || 2026;
   
   const EMPTY_FORM: Partial<Planting> = {
@@ -34,7 +35,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
   const [hoverRating, setHoverRating] = useState(0);
   const [dupeOpen, setDupeOpen] = useState(false);
 
-  // Available empty plots for the duplicate tool
   const occupiedThisYear = new Set(
     MOCK_PLANTINGS.filter(p => p.year === currentYear && p.id !== existingPlanting?.id).flatMap(p => p.plot_ids || [])
   );
@@ -71,7 +71,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,8,4,0.75)", backdropFilter: "blur(6px)" }}>
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: "linear-gradient(160deg, #1c1a14 0%, #2e2a1e 100%)", border: "1px solid rgba(122,154,110,0.3)", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
         
-        {/* Header - Fixed overlapping by using a solid background color */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-20 bg-[#1c1a14] border-b border-[#7a9a6e]/20 rounded-t-2xl">
           <div>
             <h2 className="font-display text-xl text-[#f5f2e9]">{existingPlanting ? existingPlanting.vegetable_name : "New Planting"}</h2>
@@ -112,7 +112,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             )}
           </div>
 
-          {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Vegetable *</label>
@@ -124,7 +123,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             </div>
           </div>
 
-          {/* Restored: Strain & Source */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Strain / Variety</label>
@@ -136,15 +134,10 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             </div>
           </div>
 
-          {/* Restored: Smart Dates (Conditional rendering based on 'Seed') */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
             <div>
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Started From</label>
-              <select 
-                className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none" 
-                value={form.started_from ?? "seed"} 
-                onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}
-              >
+              <select className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
                 <option value="seed">Seed</option>
                 <option value="plant">Plant / Transplant</option>
               </select>
@@ -155,7 +148,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
               <input type="date" required className="w-full p-2.5 rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635]" value={form.garden_plant_date ?? ""} onChange={(e) => set("garden_plant_date", e.target.value)} />
             </div>
 
-            {/* Conditionally show Seed Start Date only if they selected "Seed" */}
             {form.started_from === "seed" && (
               <div className="sm:col-span-2 border-t border-[#7a9a6e]/20 pt-4 mt-1">
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Seed Start Date</label>
@@ -164,7 +156,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             )}
           </div>
 
-          {/* Rating */}
           <div>
             <label className="block mb-2 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Status Rating</label>
             <div className="flex items-center gap-1">
@@ -179,7 +170,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             </div>
           </div>
 
-          {/* Restored: Notes */}
           <div>
             <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Notes</label>
             <textarea
@@ -191,7 +181,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             />
           </div>
 
-          {/* Plot Multi-Select (Duplicates) */}
           {emptyPlots.length > 0 && (
             <div className="rounded-xl p-4 bg-[#4a6741]/10 border border-[#7a9a6e]/20">
               <button type="button" className="flex items-center gap-2 w-full text-left" onClick={() => setDupeOpen(!dupeOpen)}>
@@ -218,8 +207,23 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave 
             </div>
           )}
 
-          {/* Save/Cancel */}
-          <div className="flex gap-3 pt-4">
+          {/* Footer Actions with Delete Button */}
+          <div className="flex gap-3 pt-4 mt-2 border-t border-[#7a9a6e]/20">
+            {existingPlanting && onDelete && (
+              <button 
+                type="button" 
+                onClick={() => {
+                  if(window.confirm("Are you sure you want to delete this planting from the database?")) {
+                    onDelete(existingPlanting.id);
+                    onClose();
+                  }
+                }} 
+                className="px-4 py-3 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors flex items-center justify-center"
+                title="Delete Crop"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
             <button type="submit" className="flex-1 py-3 rounded-lg font-bold text-[#1c1a14] bg-[#7a9a6e] hover:bg-[#a3e635] transition-colors shadow-lg">
               {existingPlanting ? "Update Database" : `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}`}
             </button>
