@@ -18,7 +18,13 @@ export default function Home() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const availableYears = useMemo(() => [2030, 2029, 2028, 2027, 2026, 2025, 2024], []);
+  // Dynamic Years: Looks at your DB, grabs all historical years, and adds current/future years automatically
+  const availableYears = useMemo(() => {
+    const dbYears = plantings.map(p => p.year);
+    const thisYear = new Date().getFullYear();
+    const allYears = new Set([...dbYears, thisYear - 1, thisYear, thisYear + 1, thisYear + 2]);
+    return Array.from(allYears).sort((a, b) => b - a);
+  }, [plantings]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -56,7 +62,8 @@ export default function Home() {
 
     const payload = {
       user_id: session.user.id,
-      year: currentYear,
+      // FIXED: Uses the year typed into the form FIRST. If none exists, falls back to the dashboard dropdown.
+      year: data.year ?? currentYear,
       plot_ids: data.plot_ids || [],
       vegetable_name: data.vegetable_name ?? "",
       emoji: data.emoji || null,
@@ -79,7 +86,6 @@ export default function Home() {
     fetchPlantings();
   }, [currentYear, session, fetchPlantings]);
 
-  // NEW: Delete Function
   const handleDelete = useCallback(async (id: string) => {
     if (!session?.user) return;
     
