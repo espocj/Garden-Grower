@@ -21,9 +21,8 @@ const VEGE_EMOJI: Record<string, string> = {
 };
 
 export default function PlantingModal({ plot, existingPlanting, onClose, onSave, onDelete }: Props) {
-  const currentYear = existingPlanting?.year || new Date().getFullYear();
-  // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split("T")[0];
+  const currentYear = existingPlanting?.year || new Date().getFullYear();
   
   const EMPTY_FORM: Partial<Planting> = {
     plot_ids: plot ? [plot.id] : [],
@@ -32,7 +31,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     strain: "",
     seed_source: "",
     started_from: "seed",
-    seed_plant_date: today, // FIXED: Now populates with current date
+    seed_plant_date: today,
     garden_plant_date: today,
     status_rating: 3,
     notes: "",
@@ -45,6 +44,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const [hoverRating, setHoverRating] = useState(0);
   const [dupeOpen, setDupeOpen] = useState(false);
 
+  // Auto-emoji logic (works for both Grid and History Add)
   useEffect(() => {
     if (form.vegetable_name && !form.emoji) {
       const name = form.vegetable_name.toLowerCase();
@@ -58,7 +58,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   }, [form.vegetable_name]);
 
   const occupiedThisYear = new Set(
-    MOCK_PLANTINGS.filter(p => p.year === currentYear && p.id !== existingPlanting?.id).flatMap(p => p.plot_ids || [])
+    MOCK_PLANTINGS.filter(p => p.year === form.year && p.id !== existingPlanting?.id).flatMap(p => p.plot_ids || [])
   );
   const emptyPlots = MOCK_PLOTS.filter(p => !p.is_walkway && !occupiedThisYear.has(p.id) && p.id !== plot?.id);
 
@@ -76,6 +76,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.year) return; // Prevent saving if blank
     const finalPlotIds = form.plot_ids && form.plot_ids.length > 0 ? form.plot_ids : (plot ? [plot.id] : []);
     onSave({ ...form, status_rating: rating, plot_ids: finalPlotIds });
   }
@@ -93,10 +94,11 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,8,4,0.75)", backdropFilter: "blur(6px)" }}>
       <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, #1c1a14 0%, #2e2a1e 100%)", border: "1px solid rgba(122,154,110,0.3)", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
         
+        {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 z-20 bg-[#1c1a14] border-b border-[#7a9a6e]/20">
           <div>
             <h2 className="font-display text-xl text-[#f5f2e9]">{existingPlanting ? existingPlanting.vegetable_name : "New Planting"}</h2>
-            <p className="font-mono text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase">{plotLabel} · Season {form.year}</p>
+            <p className="font-mono text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase">{plotLabel} · Season {form.year || "—"}</p>
           </div>
           <button onClick={onClose} className="rounded-full p-2 text-[#d4c49a] hover:bg-[#7a9a6e]/20 transition-colors"><X className="w-5 h-5" /></button>
         </div>
@@ -104,6 +106,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full">
           <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-5 w-full">
 
+            {/* Photo Uploader */}
             <div className="w-full h-48 rounded-xl overflow-hidden relative border border-[#7a9a6e]/30 bg-black/40 flex items-center justify-center group">
               {form.image_url ? (
                 <>
@@ -146,8 +149,18 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
               <div className="sm:col-span-1 min-w-0">
-                <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Season Year</label>
-                <input type="number" className="w-full min-w-0 p-2.5 rounded-lg bg-black/30 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635]" value={form.year ?? currentYear} onChange={(e) => set("year", Number(e.target.value))} />
+                <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Season Year *</label>
+                <input 
+                  type="number" 
+                  required 
+                  placeholder="YYYY"
+                  className="w-full min-w-0 p-2.5 rounded-lg bg-black/30 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                  value={form.year === undefined || form.year === null ? "" : form.year} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    set("year", val === "" ? undefined : Number(val));
+                  }} 
+                />
               </div>
               <div className="sm:col-span-1 min-w-0">
                 <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Strain / Variety</label>
@@ -168,7 +181,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 </select>
               </div>
               
-              {/* FIXED: Pre-populated with current date and standard type="date" for native iPad picker */}
               {form.started_from === "seed" && (
                 <div className="min-w-0">
                   <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Seed Start Date</label>
@@ -176,20 +188,20 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                     type="date"
                     style={{ colorScheme: "dark" }} 
                     className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
-                    value={form.seed_plant_date ?? today} 
+                    value={form.seed_plant_date || today} 
                     onChange={(e) => set("seed_plant_date", e.target.value)} 
                   />
                 </div>
               )}
 
               <div className="min-w-0">
-                <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Garden Plant Date</label>
+                <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Garden Plant Date *</label>
                 <input 
                   type="date" 
                   required 
                   style={{ colorScheme: "dark" }} 
                   className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
-                  value={form.garden_plant_date ?? today} 
+                  value={form.garden_plant_date || today} 
                   onChange={(e) => set("garden_plant_date", e.target.value)} 
                 />
               </div>
