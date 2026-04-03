@@ -12,7 +12,6 @@ interface Props {
   onDelete?: (id: string) => void;
 }
 
-// Emoji Dictionary for auto-population
 const VEGE_EMOJI: Record<string, string> = {
   tomato: "🍅", basil: "🌿", pepper: "🫑", "bell pepper": "🫑",
   zucchini: "🥒", cucumber: "🥒", kale: "🥬", eggplant: "🍆",
@@ -23,6 +22,8 @@ const VEGE_EMOJI: Record<string, string> = {
 
 export default function PlantingModal({ plot, existingPlanting, onClose, onSave, onDelete }: Props) {
   const currentYear = existingPlanting?.year || new Date().getFullYear();
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split("T")[0];
   
   const EMPTY_FORM: Partial<Planting> = {
     plot_ids: plot ? [plot.id] : [],
@@ -31,8 +32,8 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     strain: "",
     seed_source: "",
     started_from: "seed",
-    seed_plant_date: "",
-    garden_plant_date: new Date().toISOString().split("T")[0],
+    seed_plant_date: today, // FIXED: Now populates with current date
+    garden_plant_date: today,
     status_rating: 3,
     notes: "",
     will_plant_again: true,
@@ -44,7 +45,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const [hoverRating, setHoverRating] = useState(0);
   const [dupeOpen, setDupeOpen] = useState(false);
 
-  // Auto-emoji logic
   useEffect(() => {
     if (form.vegetable_name && !form.emoji) {
       const name = form.vegetable_name.toLowerCase();
@@ -168,18 +168,15 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 </select>
               </div>
               
-              {/* FIXED: Seed Start Date now triggers calendar picker on tap */}
+              {/* FIXED: Pre-populated with current date and standard type="date" for native iPad picker */}
               {form.started_from === "seed" && (
                 <div className="min-w-0">
                   <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Seed Start Date</label>
                   <input 
-                    type={form.seed_plant_date ? "date" : "text"} 
-                    placeholder="mm/dd/yyyy"
-                    onFocus={(e) => (e.currentTarget.type = "date")}
-                    onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
+                    type="date"
                     style={{ colorScheme: "dark" }} 
                     className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
-                    value={form.seed_plant_date ?? ""} 
+                    value={form.seed_plant_date ?? today} 
                     onChange={(e) => set("seed_plant_date", e.target.value)} 
                   />
                 </div>
@@ -192,7 +189,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                   required 
                   style={{ colorScheme: "dark" }} 
                   className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
-                  value={form.garden_plant_date ?? ""} 
+                  value={form.garden_plant_date ?? today} 
                   onChange={(e) => set("garden_plant_date", e.target.value)} 
                 />
               </div>
