@@ -134,11 +134,11 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
             </div>
           </div>
 
-          {/* Smart Date Container: min-w-0 prevents boxes from exploding outward */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
+          {/* Smart Date Container: Fixed overlapping issue and updated breakpoint to md:grid-cols-3 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-[#7a9a6e]/20 bg-[#1c1a14]/50">
             <div className="min-w-0">
               <label className="block mb-1.5 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Started From</label>
-              <select className="w-full px-2 py-2.5 text-sm rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none appearance-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
+              <select className="w-full min-w-0 px-2 py-2.5 text-sm rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] outline-none appearance-none" value={form.started_from ?? "seed"} onChange={(e) => set("started_from", e.target.value as "seed" | "plant")}>
                 <option value="seed">Seed</option>
                 <option value="plant">Plant / Transplant</option>
               </select>
@@ -153,7 +153,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                   onFocus={(e) => (e.currentTarget.type = "date")}
                   onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
                   style={{ colorScheme: "dark" }} 
-                  className="w-full px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
+                  className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
                   value={form.seed_plant_date ?? ""} 
                   onChange={(e) => set("seed_plant_date", e.target.value)} 
                 />
@@ -166,7 +166,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 type="date" 
                 required 
                 style={{ colorScheme: "dark" }} 
-                className="w-full px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
+                className="w-full min-w-0 px-2 py-2.5 text-xs rounded-lg bg-black/40 border border-[#7a9a6e]/30 text-[#f5f2e9] focus:outline-none focus:border-[#a3e635] text-left" 
                 value={form.garden_plant_date ?? ""} 
                 onChange={(e) => set("garden_plant_date", e.target.value)} 
               />
