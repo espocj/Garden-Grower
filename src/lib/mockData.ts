@@ -10,7 +10,7 @@ export interface Plot {
 
 export interface Planting {
   id: string;
-  plot_ids: string[]; // <-- THIS IS THE MAGIC CHANGE
+  plot_ids: string[]; // <-- Updated to support multiple plots per plant
   year: number;
   image_url?: string;
   vegetable_name: string;
@@ -50,12 +50,14 @@ function buildPlots(): Plot[] {
   }
   return plots;
 }
+
 export const MOCK_PLOTS: Plot[] = buildPlots();
 
 const rawData: Array<Omit<Planting, "id">> = [
   { plot_ids: ["plot-001"], year: 2026, vegetable_name: "Tomato", emoji: "🍅", status_rating: 5, garden_plant_date: "2026-05-15", started_from: "seed", will_plant_again: true },
   { plot_ids: ["plot-003", "plot-004"], year: 2026, vegetable_name: "Bell Pepper", emoji: "🫑", status_rating: 4, garden_plant_date: "2026-05-20", started_from: "plant", will_plant_again: true },
-  { plot_ids: ["plot-010"], year: 2025, vegetable_name: "Zucchini", emoji: "🥒", status_rating: 5, garden_plant_date: "2025-05-10", started_from: "seed", will_plant_again: true },
+  { plot_ids: ["plot-010", "plot-011", "plot-012"], year: 2025, vegetable_name: "Zucchini", emoji: "🥒", status_rating: 5, garden_plant_date: "2025-05-10", started_from: "seed", will_plant_again: true },
+  { plot_ids: ["plot-050"], year: 2024, vegetable_name: "Pumpkin", emoji: "🎃", status_rating: 4, garden_plant_date: "2024-06-05", started_from: "seed", will_plant_again: true },
 ];
 
 export const MOCK_PLANTINGS: Planting[] = rawData.map((p, i) => ({
