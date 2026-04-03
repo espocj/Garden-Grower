@@ -47,7 +47,6 @@ export default function WeatherBanner() {
 
   if (loading) return <div className="weather-banner px-4 py-3 text-center font-mono text-[0.6rem] text-sage uppercase tracking-widest animate-pulse">Syncing Bedford Weather...</div>;
 
-  // If there's an error, show a subtle warning instead of crashing
   if (error || !data || !data.list) {
     return (
       <div className="weather-banner px-4 py-2 flex items-center justify-center gap-2 text-[0.6rem] font-mono text-rust/70 uppercase tracking-widest">
@@ -57,19 +56,54 @@ export default function WeatherBanner() {
   }
 
   const current = data.list[0];
-  const days = [data.list[0], data.list[8], data.list[16]].map((item, i) => ({
-    label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-    icon: item.weather[0].main,
-    high: Math.round(item.main.temp_max),
-    low: Math.round(item.main.temp_min),
-  }));
 
+  // Logic to group 3-hour API chunks into true 24-hour daily summaries
+  const processForecast = (list: any[]) => {
+    const dailyData: Record<string, { temps: number[], icons: { icon: string, hour: number }[], dateObj: Date }> = {};
+
+    list.forEach(item => {
+      const date = new Date(item.dt * 1000);
+      const dateString = date.toLocaleDateString('en-US'); 
+      
+      if (!dailyData[dateString]) {
+        dailyData[dateString] = { temps: [], icons: [], dateObj: date };
+      }
+      
+      // Store all temps and icons for this calendar day
+      dailyData[dateString].temps.push(item.main.temp_max, item.main.temp_min);
+      dailyData[dateString].icons.push({ icon: item.weather[0].main, hour: date.getHours() });
+    });
+
+    // Grab the first 3 days (Today, Tomorrow, Day 3)
+    const daysArray = Object.values(dailyData).slice(0, 3);
+
+    return daysArray.map((day, i) => {
+      const high = Math.max(...day.temps);
+      const low = Math.min(...day.temps);
+      
+      // Pick the weather condition closest to 12:00 PM (Noon) for the daily icon
+      const bestIcon = day.icons.reduce((prev, curr) => 
+        Math.abs(curr.hour - 12) < Math.abs(prev.hour - 12) ? curr : prev
+      ).icon;
+
+      return {
+        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : day.dateObj.toLocaleDateString('en-US', { weekday: 'short' }),
+        icon: bestIcon,
+        high: Math.round(high),
+        low: Math.round(low),
+      };
+    });
+  };
+
+  const days = processForecast(data.list);
   const rainNext = data.list.find((i: any) => i.weather[0].main === 'Rain');
   const frostEntry = data.list.find((i: any) => i.main.temp_min <= 32);
 
   return (
     <div className="weather-banner px-4 py-3">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-4 md:gap-8">
+        
+        {/* Daily Forecast Block */}
         <div className="flex items-center gap-4">
           {days.map((day) => (
             <div key={day.label} className="flex flex-col items-center gap-1 text-center" style={{ minWidth: "52px" }}>
@@ -86,7 +120,7 @@ export default function WeatherBanner() {
 
         <div style={{ width: "1px", height: "32px", background: "rgba(122,154,110,0.2)" }} className="hidden md:block" />
 
-        {/* Updated Rain and Frost blocks with headers matching the Days */}
+        {/* Rain & Frost Block */}
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-center gap-1 text-center">
             <span className="font-mono" style={{ fontSize: "0.6rem", letterSpacing: "0.1em", color: "var(--sage)", textTransform: "uppercase" }}>Next Rain</span>
