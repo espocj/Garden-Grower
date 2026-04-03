@@ -1,4 +1,3 @@
-// lib/mockData.ts
 export type StartedFrom = "seed" | "plant";
 export type PlantCategory = "Vegetable" | "Herb" | "Fruit" | "Flower" | "Other";
 
@@ -11,7 +10,7 @@ export interface Plot {
 
 export interface Planting {
   id: string;
-  plot_id: string;
+  plot_ids: string[]; // <-- THIS IS THE MAGIC CHANGE
   year: number;
   image_url?: string;
   vegetable_name: string;
@@ -27,7 +26,6 @@ export interface Planting {
   will_plant_again: boolean;
 }
 
-// ── Grid Layout Logic ─────────────────────────────────────────
 function buildPlots(): Plot[] {
   const plots: Plot[] = [];
   const walkwaySet = new Set<string>();
@@ -54,21 +52,10 @@ function buildPlots(): Plot[] {
 }
 export const MOCK_PLOTS: Plot[] = buildPlots();
 
-// ── Expanded Mock Data for Multiple Years ─────────────────────
 const rawData: Array<Omit<Planting, "id">> = [
-  // 2026 (Live Season)
-  { plot_id: "plot-001", year: 2026, vegetable_name: "Tomato", emoji: "🍅", status_rating: 5, garden_plant_date: "2026-05-15", started_from: "seed", will_plant_again: true },
-  { plot_id: "plot-003", year: 2026, vegetable_name: "Bell Pepper", emoji: "🫑", status_rating: 4, garden_plant_date: "2026-05-20", started_from: "plant", will_plant_again: true },
-  
-  // 2025 (Last Season - Randomly Placed)
-  { plot_id: "plot-010", year: 2025, vegetable_name: "Zucchini", emoji: "🥒", status_rating: 5, garden_plant_date: "2025-05-10", started_from: "seed", will_plant_again: true },
-  { plot_id: "plot-025", year: 2025, vegetable_name: "Kale", emoji: "🥬", status_rating: 3, garden_plant_date: "2025-04-15", started_from: "seed", will_plant_again: true },
-  { plot_id: "plot-050", year: 2025, vegetable_name: "Carrot", emoji: "🥕", status_rating: 4, garden_plant_date: "2025-04-05", started_from: "seed", will_plant_again: true },
-  
-  // 2024 (Two Years Ago)
-  { plot_id: "plot-001", year: 2024, vegetable_name: "Jalapeño", emoji: "🌶️", status_rating: 5, garden_plant_date: "2024-05-22", started_from: "plant", will_plant_again: true },
-  { plot_id: "plot-015", year: 2024, vegetable_name: "Marigold", emoji: "🌼", status_rating: 5, garden_plant_date: "2024-05-15", started_from: "seed", will_plant_again: true },
-  { plot_id: "plot-100", year: 2024, vegetable_name: "Pumpkin", emoji: "🎃", status_rating: 4, garden_plant_date: "2024-06-05", started_from: "seed", will_plant_again: true },
+  { plot_ids: ["plot-001"], year: 2026, vegetable_name: "Tomato", emoji: "🍅", status_rating: 5, garden_plant_date: "2026-05-15", started_from: "seed", will_plant_again: true },
+  { plot_ids: ["plot-003", "plot-004"], year: 2026, vegetable_name: "Bell Pepper", emoji: "🫑", status_rating: 4, garden_plant_date: "2026-05-20", started_from: "plant", will_plant_again: true },
+  { plot_ids: ["plot-010"], year: 2025, vegetable_name: "Zucchini", emoji: "🥒", status_rating: 5, garden_plant_date: "2025-05-10", started_from: "seed", will_plant_again: true },
 ];
 
 export const MOCK_PLANTINGS: Planting[] = rawData.map((p, i) => ({
