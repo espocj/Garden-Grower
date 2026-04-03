@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { useState, useCallback } from "react";
@@ -22,8 +21,10 @@ export default function Home() {
       const newEntry: Planting = {
         id:                data.id ?? `planting-${Date.now()}`,
         plot_id:           data.plot_id!,
-        year:              data.year ?? 2025,
+        year:              data.year ?? 2026, // Updated to 2026
         vegetable_name:    data.vegetable_name ?? "",
+        emoji:             data.emoji,
+        category:          data.category,
         strain:            data.strain,
         seed_source:       data.seed_source,
         started_from:      data.started_from ?? "seed",
@@ -62,7 +63,8 @@ export default function Home() {
     );
   }, []);
 
-  const currentYearPlantings = plantings.filter((p) => p.year === 2025);
+  // Updated filter for 2026
+  const currentYearPlantings = plantings.filter((p) => p.year === 2026);
   const totalPlots = MOCK_PLOTS.filter((p) => !p.is_walkway).length;
   const plantedCount = new Set(currentYearPlantings.map((p) => p.plot_id)).size;
 
@@ -79,7 +81,7 @@ export default function Home() {
           zIndex: 40,
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between" style={{ height: "56px" }}>
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between" style={{ height: "64px" }}>
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div
@@ -93,32 +95,34 @@ export default function Home() {
                 Garden<span style={{ color: "var(--sage)" }}>Dashboard</span>
               </div>
               <div className="font-mono" style={{ fontSize: "0.55rem", color: "var(--straw)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                Season 2025
+                Season 2026
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center" style={{ borderBottom: "1px solid rgba(122,154,110,0.15)" }}>
+          <div className="flex items-center gap-1">
             <button
-              className={`nav-tab flex items-center gap-2 ${activeTab === "garden" ? "active" : ""}`}
+              className={`nav-tab px-4 py-2 flex items-center gap-2 rounded-t-lg transition-all ${activeTab === "garden" ? "text-mint border-b-2 border-mint bg-white/5" : "text-sage/60 hover:text-sage"}`}
               onClick={() => setActiveTab("garden")}
+              style={{ fontSize: "0.85rem" }}
             >
               <Sprout className="w-4 h-4" />
-              Garden View
+              <span className="hidden sm:inline">Garden View</span>
             </button>
             <button
-              className={`nav-tab flex items-center gap-2 ${activeTab === "history" ? "active" : ""}`}
+              className={`nav-tab px-4 py-2 flex items-center gap-2 rounded-t-lg transition-all ${activeTab === "history" ? "text-mint border-b-2 border-mint bg-white/5" : "text-sage/60 hover:text-sage"}`}
               onClick={() => setActiveTab("history")}
+              style={{ fontSize: "0.85rem" }}
             >
               <Database className="w-4 h-4" />
-              Historical Database
+              <span className="hidden sm:inline">Historical Database</span>
             </button>
           </div>
 
           {/* Stats pill */}
           <div
-            className="hidden md:flex items-center gap-2 rounded-full px-3 py-1.5"
+            className="hidden md:flex items-center gap-2 rounded-full px-4 py-1.5"
             style={{
               background: "rgba(74,103,65,0.2)",
               border: "1px solid rgba(122,154,110,0.25)",
@@ -131,7 +135,7 @@ export default function Home() {
               className="rounded-full"
               style={{ width: "7px", height: "7px", background: "var(--sage)", animation: "pulse 2s infinite" }}
             />
-            {plantedCount}/{totalPlots} plots planted
+            {plantedCount}/{totalPlots} PLOTS
           </div>
         </div>
       </nav>
@@ -140,20 +144,20 @@ export default function Home() {
       <WeatherBanner />
 
       {/* ── Main Content ─────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 overflow-x-hidden">
 
         {activeTab === "garden" && (
-          <div>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Section Header */}
-            <div className="mb-6">
+            <div className="mb-8 text-center sm:text-left">
               <h1
                 className="font-display"
-                style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", color: "var(--cream)", lineHeight: 1.2 }}
+                style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", color: "var(--cream)", lineHeight: 1.2 }}
               >
-                Garden <span style={{ fontStyle: "italic", color: "var(--sage)" }}>Plot Map</span>
+                Bedford <span style={{ fontStyle: "italic", color: "var(--sage)" }}>Plot Map</span>
               </h1>
-              <p style={{ fontSize: "0.8rem", color: "var(--straw)", marginTop: "4px" }}>
-                Click any plot to add or edit a planting. Walkways are shown as empty spaces.
+              <p style={{ fontSize: "0.85rem", color: "var(--straw)", marginTop: "6px" }}>
+                Interactive grid for the 2026 Season. Tap any square to manage your crop.
               </p>
             </div>
 
@@ -163,24 +167,24 @@ export default function Home() {
             />
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
               {[
-                { label: "Total Plots",    value: totalPlots,                              color: "var(--sage)"  },
-                { label: "Planted",        value: plantedCount,                            color: "var(--mint)"  },
-                { label: "Empty",          value: totalPlots - plantedCount,               color: "var(--straw)" },
-                { label: "Avg Rating",     value: currentYearPlantings.length
+                { label: "Total Capacity", value: totalPlots,                              color: "var(--sage)"  },
+                { label: "Active Crops",   value: plantedCount,                            color: "var(--mint)"  },
+                { label: "Open Space",     value: totalPlots - plantedCount,               color: "var(--straw)" },
+                { label: "Season Health",  value: currentYearPlantings.length
                     ? (currentYearPlantings.reduce((s, p) => s + (p.status_rating ?? 0), 0) / currentYearPlantings.length).toFixed(1)
                     : "—",                                                                  color: "var(--gold)"  },
               ].map(({ label, value, color }) => (
                 <div
                   key={label}
-                  className="rounded-xl p-4"
+                  className="rounded-2xl p-5 shadow-lg shadow-black/20"
                   style={{ background: "rgba(46,42,30,0.6)", border: "1px solid rgba(122,154,110,0.15)" }}
                 >
-                  <div className="font-mono" style={{ fontSize: "0.6rem", color: "var(--sage)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "4px" }}>
+                  <div className="font-mono" style={{ fontSize: "0.6rem", color: "var(--sage)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>
                     {label}
                   </div>
-                  <div className="font-display" style={{ fontSize: "1.75rem", color, lineHeight: 1 }}>
+                  <div className="font-display" style={{ fontSize: "2rem", color, lineHeight: 1 }}>
                     {value}
                   </div>
                 </div>
@@ -190,17 +194,17 @@ export default function Home() {
         )}
 
         {activeTab === "history" && (
-          <div>
+          <div className="animate-in fade-in duration-500">
             {/* Section Header */}
             <div className="mb-6">
               <h1
                 className="font-display"
                 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", color: "var(--cream)", lineHeight: 1.2 }}
               >
-                Historical <span style={{ fontStyle: "italic", color: "var(--sage)" }}>Database</span>
+                Garden <span style={{ fontStyle: "italic", color: "var(--sage)" }}>Archives</span>
               </h1>
               <p style={{ fontSize: "0.8rem", color: "var(--straw)", marginTop: "4px" }}>
-                Browse, filter, and edit all plantings across every season.
+                Full records including notes and ratings from previous growing seasons.
               </p>
             </div>
 
@@ -214,16 +218,16 @@ export default function Home() {
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer
-        className="text-center py-4"
+        className="text-center py-6 mt-12"
         style={{
           borderTop: "1px solid rgba(122,154,110,0.12)",
           fontSize: "0.65rem",
-          color: "rgba(212,196,154,0.4)",
+          color: "rgba(212,196,154,0.3)",
           fontFamily: "var(--font-mono)",
-          letterSpacing: "0.08em",
+          letterSpacing: "0.1em",
         }}
       >
-        GARDEN DASHBOARD · SEASON 2025 · BUILT WITH NEXT.JS + SUPABASE
+        BEDFORD GARDEN TRACKER · SEASON 2026 · BUILT FOR DAD
       </footer>
     </div>
   );
