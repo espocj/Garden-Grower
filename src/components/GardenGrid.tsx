@@ -8,6 +8,7 @@ import PlantingModal from "./PlantingModal";
 interface Props {
   plantings: Planting[];
   onSave: (data: Partial<Planting>) => void;
+  onDelete?: (id: string) => void; // Added onDelete here
 }
 
 const VEGE_EMOJI: Record<string, string> = {
@@ -77,10 +78,9 @@ function PlotCell({ plot, planting, onClick }: { plot: Plot; planting?: Planting
   );
 }
 
-export default function GardenGrid({ plantings, onSave }: Props) {
+export default function GardenGrid({ plantings, onSave, onDelete }: Props) {
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
   
-  // Create a map linking every individual plot_id to its parent Planting object
   const plantingMap = new Map<string, Planting>();
   plantings.forEach(p => {
     if (p.plot_ids) {
@@ -94,13 +94,11 @@ export default function GardenGrid({ plantings, onSave }: Props) {
         className="grid w-full gap-1.5"
         style={{ gridTemplateColumns: '40px repeat(15, minmax(0, 1fr))' }}
       >
-        {/* Header Row */}
         <div className="h-8 flex items-center justify-center font-mono text-[9px] text-[#3e2723]/40 border-b border-[#3e2723]/10">R\C</div>
         {Array.from({ length: 15 }).map((_, i) => (
           <div key={i} className="h-8 flex items-center justify-center font-mono text-[9px] text-[#3e2723]/60 font-bold uppercase border-b border-[#3e2723]/10">{i+1}</div>
         ))}
 
-        {/* Plots */}
         {Array.from({ length: 7 }).map((_, r) => (
           <React.Fragment key={r}>
             <div className="flex items-center justify-center font-mono text-[9px] text-[#3e2723]/60 font-bold uppercase">R{r+1}</div>
@@ -124,7 +122,8 @@ export default function GardenGrid({ plantings, onSave }: Props) {
           onSave={(data) => {
             onSave(data);
             setSelectedPlot(null);
-          }} 
+          }}
+          onDelete={onDelete} 
         />
       )}
     </div>
