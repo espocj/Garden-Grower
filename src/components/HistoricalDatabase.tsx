@@ -8,7 +8,7 @@ import PlantingModal from "./PlantingModal";
 interface Props {
   plantings: Planting[];
   onSave: (data: Partial<Planting>) => void;
-  onDelete?: (id: string) => void; // Added onDelete here
+  onDelete?: (id: string) => void;
 }
 
 const COLUMNS = [
@@ -26,7 +26,8 @@ const COLUMNS = [
   { id: "notes", label: "Notes" },
 ];
 
-const formatDate = (dateString?: string) => {
+// Helper to prevent Vercel Build parsing errors
+const formatDate = (dateString?: string | null) => {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
