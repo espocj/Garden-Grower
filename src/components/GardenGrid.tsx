@@ -109,27 +109,27 @@ export default function GardenGrid({ plantings, onSave }: Props) {
   plantings.forEach((p) => plantingMap.set(p.plot_id, p));
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-6xl mx-auto px-6 md:px-12">
       {/* Legend */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-moss/40 border border-sage/40" />
-            <span className="text-[0.6rem] font-mono text-straw uppercase tracking-wider">Planted</span>
+            <span className="text-[0.65rem] font-mono text-straw uppercase tracking-widest">Planted</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-bark/40 border border-sage/10" />
-            <span className="text-[0.6rem] font-mono text-straw uppercase tracking-wider">Empty</span>
+            <span className="text-[0.65rem] font-mono text-straw uppercase tracking-widest">Empty</span>
           </div>
         </div>
-        <span className="text-[0.6rem] font-mono text-sage/60 uppercase tracking-widest hidden sm:block">
-          ← Back Row (Bedford)
+        <span className="text-[0.65rem] font-mono text-sage/60 uppercase tracking-widest hidden sm:block">
+          ← Back Row (Bedford Side)
         </span>
       </div>
 
-      {/* The 15-Column Custom Grid (Inline Style for Reliability) */}
+      {/* The Grid with side space */}
       <div 
-        className="grid w-full gap-1"
+        className="grid w-full gap-1.5"
         style={{ 
           gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' 
         }}
@@ -145,10 +145,10 @@ export default function GardenGrid({ plantings, onSave }: Props) {
         ))}
       </div>
 
-      <div className="flex justify-between items-center mt-3 text-[0.55rem] font-mono text-sage/40 uppercase tracking-tighter">
+      <div className="flex justify-between items-center mt-6 px-1 text-[0.6rem] font-mono text-sage/40 uppercase tracking-widest">
         <span>Front Path →</span>
-        <div className="flex gap-3">
-           {[1,2,3,4,5,6,7].map(r => <span key={r}>R{r}</span>)}
+        <div className="flex gap-4">
+           {[1,2,3,4,5,6,7].map(r => <span key={r}>Row {r}</span>)}
         </div>
       </div>
 
