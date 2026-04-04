@@ -8,7 +8,7 @@ import PlantingModal from "./PlantingModal";
 interface Props {
   plantings: Planting[];
   onSave: (data: Partial<Planting>) => void;
-  onDelete?: (id: string) => void; // Added onDelete here
+  onDelete?: (id: string) => void;
 }
 
 const VEGE_EMOJI: Record<string, string> = {
@@ -67,7 +67,8 @@ function PlotCell({ plot, planting, onClick }: { plot: Plot; planting?: Planting
         <>
           <span className="text-xl leading-none mb-1">{getEmoji(planting.vegetable_name, planting.emoji)}</span>
           <StarRating rating={planting.status_rating ?? 0} />
-          <span className="font-mono text-center font-bold uppercase w-full px-1 mt-1 leading-[0.6rem] line-clamp-2" style={{ fontSize: "0.55rem", color: "#94a77e" }}>
+          {/* FIXED: Removed line-clamp, added break-words, and reduced font size slightly to fit full names */}
+          <span className="font-mono text-center font-bold uppercase w-full px-px mt-1 leading-[0.55rem] break-words whitespace-normal" style={{ fontSize: "0.45rem", color: "#94a77e" }}>
             {planting.vegetable_name}
           </span>
         </>
