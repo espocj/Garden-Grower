@@ -47,6 +47,9 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const [isUploading, setIsUploading] = useState(false);
   const [takenPlots, setTakenPlots] = useState<Set<string>>(new Set());
 
+  // Use explicit form.plot_ids if it exists, otherwise fall back to original plot
+  const currentPlotIds = form.plot_ids !== undefined ? form.plot_ids : (plot ? [plot.id] : []);
+
   useEffect(() => {
     if (form.vegetable_name && !form.emoji) {
       const name = form.vegetable_name.toLowerCase();
@@ -86,10 +89,9 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   }
 
   function toggleDupe(plotId: string) {
-    const currentIds = form.plot_ids || (plot ? [plot.id] : []);
-    const newIds = currentIds.includes(plotId) 
-      ? currentIds.filter(id => id !== plotId) 
-      : [...currentIds, plotId];
+    const newIds = currentPlotIds.includes(plotId) 
+      ? currentPlotIds.filter(id => id !== plotId) 
+      : [...currentPlotIds, plotId];
     set("plot_ids", newIds);
   }
 
@@ -119,8 +121,9 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.year) return; 
-    const finalPlotIds = form.plot_ids && form.plot_ids.length > 0 ? form.plot_ids : (plot ? [plot.id] : []);
-    onSave({ ...form, status_rating: rating, plot_ids: finalPlotIds });
+    
+    // FIXED: Honors currentPlotIds exactly as is. If you unclick all of them, it saves as []
+    onSave({ ...form, status_rating: rating, plot_ids: currentPlotIds });
   }
 
   useEffect(() => {
@@ -130,7 +133,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   }, [onClose]);
 
   const plotLabel = plot ? `Row ${plot.grid_row}, Col ${plot.grid_col}` : "Historical Record";
-  const currentPlotIds = form.plot_ids || (plot ? [plot.id] : []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,8,4,0.75)", backdropFilter: "blur(6px)" }}>
@@ -157,7 +159,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 <>
                   <img src={form.image_url} alt="Crop" className="w-full h-full object-contain p-2" />
                   <div className="absolute top-2 right-2 flex gap-2">
-                    {/* NEW: Remove Photo Button */}
                     <button 
                       type="button" 
                       onClick={() => set("image_url", "")} 
@@ -358,7 +359,13 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 </button>
               )}
               <button disabled={isUploading} type="submit" className="flex-1 min-w-0 py-3 rounded-lg font-bold text-[#1c1a14] bg-[#7a9a6e] hover:bg-[#a3e635] transition-colors shadow-lg truncate disabled:opacity-50">
-                {isUploading ? "Uploading Photo..." : existingPlanting ? "Update Database" : plot ? `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}` : "Save Historical Record"}
+                {isUploading 
+                  ? "Uploading Photo..." 
+                  : existingPlanting 
+                    ? "Update Database" 
+                    : currentPlotIds.length > 0 
+                      ? `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length !== 1 ? "s" : ""}` 
+                      : "Save Historical Record"}
               </button>
               <button type="button" onClick={onClose} className="flex-shrink-0 px-6 py-3 rounded-lg text-[#d4c49a] border border-[#d4c49a]/30 hover:bg-[#d4c49a]/10 transition-colors">
                 Cancel
