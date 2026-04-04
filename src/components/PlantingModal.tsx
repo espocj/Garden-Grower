@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Star, Upload, Copy, ChevronDown, Maximize2, Trash2 } from "lucide-react";
-import { MOCK_PLOTS, MOCK_PLANTINGS, Planting, Plot } from "@/lib/mockData";
+import { X, Star, Upload, Copy, ChevronDown, Maximize2, Trash2, Loader2 } from "lucide-react";
+import { MOCK_PLOTS, Planting, Plot } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   plot?: Plot | null;
@@ -43,8 +44,10 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const [rating, setRating] = useState(existingPlanting?.status_rating ?? 3);
   const [hoverRating, setHoverRating] = useState(0);
   const [dupeOpen, setDupeOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [takenPlots, setTakenPlots] = useState<Set<string>>(new Set());
 
-  // Auto-emoji logic (works for both Grid and History Add)
+  // Auto-emoji logic
   useEffect(() => {
     if (form.vegetable_name && !form.emoji) {
       const name = form.vegetable_name.toLowerCase();
@@ -57,10 +60,29 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     }
   }, [form.vegetable_name]);
 
-  const occupiedThisYear = new Set(
-    MOCK_PLANTINGS.filter(p => p.year === form.year && p.id !== existingPlanting?.id).flatMap(p => p.plot_ids || [])
-  );
-  const emptyPlots = MOCK_PLOTS.filter(p => !p.is_walkway && !occupiedThisYear.has(p.id) && p.id !== plot?.id);
+  // Fetch taken plots from the LIVE database for the current form year
+  useEffect(() => {
+    async function fetchTakenPlots() {
+      const { data } = await supabase
+        .from('plantings')
+        .select('id, plot_ids')
+        .eq('year', form.year || currentYear);
+
+      if (data) {
+        const taken = new Set<string>();
+        data.forEach(p => {
+          if (p.id !== existingPlanting?.id) {
+            p.plot_ids?.forEach((id: string) => taken.add(id));
+          }
+        });
+        setTakenPlots(taken);
+      }
+    }
+    fetchTakenPlots();
+  }, [form.year, currentYear, existingPlanting?.id]);
+
+  // All active garden plots in the grid
+  const allGardenPlots = MOCK_PLOTS.filter(p => !p.is_walkway);
 
   function set(key: keyof Planting, value: unknown) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -74,9 +96,33 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     set("plot_ids", newIds);
   }
 
+  // Handle uploading the physical image file to Supabase Storage
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('garden-photos')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      alert("Error saving photo to database.");
+      setIsUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from('garden-photos').getPublicUrl(fileName);
+    set("image_url", data.publicUrl);
+    setIsUploading(false);
+  };
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.year) return; // Prevent saving if blank
+    if (!form.year) return; 
     const finalPlotIds = form.plot_ids && form.plot_ids.length > 0 ? form.plot_ids : (plot ? [plot.id] : []);
     onSave({ ...form, status_rating: rating, plot_ids: finalPlotIds });
   }
@@ -94,7 +140,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,8,4,0.75)", backdropFilter: "blur(6px)" }}>
       <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden" style={{ background: "linear-gradient(160deg, #1c1a14 0%, #2e2a1e 100%)", border: "1px solid rgba(122,154,110,0.3)", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
         
-        {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 z-20 bg-[#1c1a14] border-b border-[#7a9a6e]/20">
           <div>
             <h2 className="font-display text-xl text-[#f5f2e9]">{existingPlanting ? existingPlanting.vegetable_name : "New Planting"}</h2>
@@ -106,9 +151,13 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full">
           <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-5 w-full">
 
-            {/* Photo Uploader */}
             <div className="w-full h-48 rounded-xl overflow-hidden relative border border-[#7a9a6e]/30 bg-black/40 flex items-center justify-center group">
-              {form.image_url ? (
+              {isUploading ? (
+                <div className="flex flex-col items-center justify-center text-[#7a9a6e] animate-pulse">
+                  <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                  <span className="text-xs font-mono tracking-widest uppercase">Saving to Cloud...</span>
+                </div>
+              ) : form.image_url ? (
                 <>
                   <img src={form.image_url} alt="Crop" className="w-full h-full object-contain p-2" />
                   <div className="absolute top-2 right-2 flex gap-2">
@@ -117,10 +166,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                     </button>
                     <label className="p-2 bg-[#7a9a6e] hover:bg-[#a3e635] hover:text-black rounded-lg text-[#f5f2e9] backdrop-blur-md cursor-pointer transition-colors shadow-lg">
                       <Upload size={16} />
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) set("image_url", URL.createObjectURL(file));
-                      }} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                     </label>
                   </div>
                 </>
@@ -128,10 +174,7 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-[#7a9a6e]/10 transition-colors">
                   <Upload className="w-8 h-8 text-[#7a9a6e] mb-2" />
                   <span className="text-xs font-mono text-[#d4c49a] tracking-widest uppercase">Upload Photo</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) set("image_url", URL.createObjectURL(file));
-                  }} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 </label>
               )}
             </div>
@@ -207,17 +250,35 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               </div>
             </div>
 
-            <div>
-              <label className="block mb-2 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Status Rating</label>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" className="outline-none flex-shrink-0" onMouseEnter={() => setHoverRating(n)} onMouseLeave={() => setHoverRating(0)} onClick={() => setRating(n)}>
-                    <Star className="w-7 h-7" style={{ fill: n <= (hoverRating || rating) ? "#FBBF24" : "transparent", color: n <= (hoverRating || rating) ? "#FBBF24" : "rgba(122,154,110,0.4)", transition: "all 0.15s" }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full border border-[#7a9a6e]/20 bg-[#1c1a14]/50 p-4 rounded-xl">
+              <div>
+                <label className="block mb-2 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono">Status Rating</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" className="outline-none flex-shrink-0" onMouseEnter={() => setHoverRating(n)} onMouseLeave={() => setHoverRating(0)} onClick={() => setRating(n)}>
+                      <Star className="w-7 h-7" style={{ fill: n <= (hoverRating || rating) ? "#FBBF24" : "transparent", color: n <= (hoverRating || rating) ? "#FBBF24" : "rgba(122,154,110,0.4)", transition: "all 0.15s" }} />
+                    </button>
+                  ))}
+                  <span className="ml-3 font-mono text-[0.75rem] text-[#d4c49a] uppercase tracking-widest">
+                    {["", "Poor", "Fair", "Good", "Great", "Excellent"][rating]}
+                  </span>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex flex-col justify-center border-t sm:border-t-0 sm:border-l border-[#7a9a6e]/20 pt-4 sm:pt-0 sm:pl-4">
+                <label className="block mb-2 text-[0.7rem] text-[#7a9a6e] tracking-widest uppercase font-mono truncate">Plant Again Next Year?</label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => set("will_plant_again", !form.will_plant_again)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.will_plant_again ? 'bg-[#7a9a6e]' : 'bg-black/40 border border-[#7a9a6e]/30'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-[#f5f2e9] transition-transform ${form.will_plant_again ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
-                ))}
-                <span className="ml-3 font-mono text-[0.75rem] text-[#d4c49a] uppercase tracking-widest">
-                  {["", "Poor", "Fair", "Good", "Great", "Excellent"][rating]}
-                </span>
+                  <span className="text-xs font-mono text-[#d4c49a] uppercase tracking-widest">
+                    {form.will_plant_again ? "Yes" : "No"}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -232,31 +293,49 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
               />
             </div>
 
-            {emptyPlots.length > 0 && (
-              <div className="rounded-xl p-4 bg-[#4a6741]/10 border border-[#7a9a6e]/20 w-full">
-                <button type="button" className="flex items-center gap-2 w-full text-left min-w-0" onClick={() => setDupeOpen(!dupeOpen)}>
-                  <Copy className="w-4 h-4 flex-shrink-0 text-[#7a9a6e]" />
-                  <span className="text-[0.8rem] text-[#a3e635] uppercase font-mono tracking-widest truncate">Plot Multi-Select</span>
-                  <span className="flex-shrink-0 rounded-full px-2 py-0.5 font-mono ml-2 text-[0.6rem] bg-[#7a9a6e] text-black font-bold">
-                    {currentPlotIds.length} Linked
-                  </span>
-                  <ChevronDown className="w-4 h-4 ml-auto flex-shrink-0 transition-transform text-[#7a9a6e]" style={{ transform: dupeOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
-                </button>
+            <div className="rounded-xl p-4 bg-[#4a6741]/10 border border-[#7a9a6e]/20 w-full">
+              <button type="button" className="flex items-center gap-2 w-full text-left min-w-0" onClick={() => setDupeOpen(!dupeOpen)}>
+                <Copy className="w-4 h-4 flex-shrink-0 text-[#7a9a6e]" />
+                <span className="text-[0.8rem] text-[#a3e635] uppercase font-mono tracking-widest truncate">Plot Multi-Select</span>
+                <span className="flex-shrink-0 rounded-full px-2 py-0.5 font-mono ml-2 text-[0.6rem] bg-[#7a9a6e] text-black font-bold">
+                  {currentPlotIds.length} Linked
+                </span>
+                <ChevronDown className="w-4 h-4 ml-auto flex-shrink-0 transition-transform text-[#7a9a6e]" style={{ transform: dupeOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+              </button>
 
-                {dupeOpen && (
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-2 scrollbar-hide">
-                    {emptyPlots.map((ep) => {
-                      const isSelected = currentPlotIds.includes(ep.id);
-                      return (
-                        <button key={ep.id} type="button" onClick={() => toggleDupe(ep.id)} className="rounded-lg px-2 py-2 text-center transition-all font-mono text-[0.65rem] border" style={{ background: isSelected ? "#7a9a6e" : "rgba(0,0,0,0.3)", color: isSelected ? "#1c1a14" : "#d4c49a", borderColor: isSelected ? "#a3e635" : "rgba(122,154,110,0.2)" }}>
-                          R{ep.grid_row}C{ep.grid_col}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+              {dupeOpen && (
+                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-40 overflow-y-auto pr-2 scrollbar-hide">
+                  {allGardenPlots.map((ep) => {
+                    const isSelected = currentPlotIds.includes(ep.id);
+                    const isTakenByOther = takenPlots.has(ep.id);
+
+                    // Styling logic for the grid matrix
+                    const bg = isSelected ? "#7a9a6e" : (isTakenByOther ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.3)");
+                    const color = isSelected ? "#1c1a14" : (isTakenByOther ? "rgba(122,154,110,0.3)" : "#d4c49a");
+                    const border = isSelected ? "#a3e635" : (isTakenByOther ? "rgba(122,154,110,0.1)" : "rgba(122,154,110,0.2)");
+
+                    return (
+                      <button 
+                        key={ep.id} 
+                        type="button" 
+                        disabled={isTakenByOther && !isSelected}
+                        onClick={() => toggleDupe(ep.id)} 
+                        className="rounded-lg px-2 py-2 text-center transition-all font-mono text-[0.65rem] border" 
+                        style={{ 
+                          background: bg, 
+                          color: color, 
+                          borderColor: border,
+                          cursor: isTakenByOther && !isSelected ? "not-allowed" : "pointer",
+                          opacity: isTakenByOther && !isSelected ? 0.6 : 1
+                        }}
+                      >
+                        R{ep.grid_row}C{ep.grid_col}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-4 mt-2 border-t border-[#7a9a6e]/20 w-full">
               {existingPlanting && onDelete && (
@@ -274,8 +353,8 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                   <Trash2 size={20} />
                 </button>
               )}
-              <button type="submit" className="flex-1 min-w-0 py-3 rounded-lg font-bold text-[#1c1a14] bg-[#7a9a6e] hover:bg-[#a3e635] transition-colors shadow-lg truncate">
-                {existingPlanting ? "Update Database" : plot ? `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}` : "Save Historical Record"}
+              <button disabled={isUploading} type="submit" className="flex-1 min-w-0 py-3 rounded-lg font-bold text-[#1c1a14] bg-[#7a9a6e] hover:bg-[#a3e635] transition-colors shadow-lg truncate disabled:opacity-50">
+                {isUploading ? "Uploading Photo..." : existingPlanting ? "Update Database" : plot ? `Plant in ${currentPlotIds.length} Plot${currentPlotIds.length > 1 ? "s" : ""}` : "Save Historical Record"}
               </button>
               <button type="button" onClick={onClose} className="flex-shrink-0 px-6 py-3 rounded-lg text-[#d4c49a] border border-[#d4c49a]/30 hover:bg-[#d4c49a]/10 transition-colors">
                 Cancel
