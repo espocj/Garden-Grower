@@ -18,7 +18,7 @@ export default function Home() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dynamic Years: Looks at your DB, grabs all historical years, and adds current/future years automatically
+  // Dynamic Years
   const availableYears = useMemo(() => {
     const dbYears = plantings.map(p => p.year);
     const thisYear = new Date().getFullYear();
@@ -62,7 +62,6 @@ export default function Home() {
 
     const payload = {
       user_id: session.user.id,
-      // FIXED: Uses the year typed into the form FIRST. If none exists, falls back to the dashboard dropdown.
       year: data.year ?? currentYear,
       plot_ids: data.plot_ids || [],
       vegetable_name: data.vegetable_name ?? "",
@@ -75,6 +74,7 @@ export default function Home() {
       status_rating: data.status_rating ?? 3,
       notes: data.notes || null,
       will_plant_again: data.will_plant_again ?? true,
+      image_url: data.image_url || null, // FIXED: Now actively saves the photo URL to the database!
     };
 
     if (data.id && !data.id.startsWith('planting-')) {
