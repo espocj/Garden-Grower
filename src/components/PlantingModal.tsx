@@ -47,7 +47,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
   const [isUploading, setIsUploading] = useState(false);
   const [takenPlots, setTakenPlots] = useState<Set<string>>(new Set());
 
-  // Auto-emoji logic
   useEffect(() => {
     if (form.vegetable_name && !form.emoji) {
       const name = form.vegetable_name.toLowerCase();
@@ -60,7 +59,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     }
   }, [form.vegetable_name]);
 
-  // Fetch taken plots from the LIVE database for the current form year
   useEffect(() => {
     async function fetchTakenPlots() {
       const { data } = await supabase
@@ -81,7 +79,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     fetchTakenPlots();
   }, [form.year, currentYear, existingPlanting?.id]);
 
-  // All active garden plots in the grid
   const allGardenPlots = MOCK_PLOTS.filter(p => !p.is_walkway);
 
   function set(key: keyof Planting, value: unknown) {
@@ -96,7 +93,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
     set("plot_ids", newIds);
   }
 
-  // Handle uploading the physical image file to Supabase Storage
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -161,6 +157,15 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                 <>
                   <img src={form.image_url} alt="Crop" className="w-full h-full object-contain p-2" />
                   <div className="absolute top-2 right-2 flex gap-2">
+                    {/* NEW: Remove Photo Button */}
+                    <button 
+                      type="button" 
+                      onClick={() => set("image_url", "")} 
+                      className="p-2 bg-red-500/60 hover:bg-red-500/80 rounded-lg text-[#f5f2e9] backdrop-blur-md transition-colors shadow-lg"
+                      title="Remove Photo"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                     <button type="button" onClick={() => window.open(form.image_url)} className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-[#f5f2e9] backdrop-blur-md transition-colors shadow-lg">
                       <Maximize2 size={16} />
                     </button>
@@ -309,7 +314,6 @@ export default function PlantingModal({ plot, existingPlanting, onClose, onSave,
                     const isSelected = currentPlotIds.includes(ep.id);
                     const isTakenByOther = takenPlots.has(ep.id);
 
-                    // Styling logic for the grid matrix
                     const bg = isSelected ? "#7a9a6e" : (isTakenByOther ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.3)");
                     const color = isSelected ? "#1c1a14" : (isTakenByOther ? "rgba(122,154,110,0.3)" : "#d4c49a");
                     const border = isSelected ? "#a3e635" : (isTakenByOther ? "rgba(122,154,110,0.1)" : "rgba(122,154,110,0.2)");
