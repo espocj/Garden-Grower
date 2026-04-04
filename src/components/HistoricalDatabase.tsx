@@ -28,7 +28,13 @@ const COLUMNS = [
 
 const formatDate = (dateString?: string | null) => {
   if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // FIXED: timeZone: 'UTC' prevents the iPad from shifting the date back by a day!
+  return new Date(dateString).toLocaleDateString('en-US', { 
+    timeZone: 'UTC', 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
 };
 
 export default function HistoricalDatabase({ plantings, onSave, onDelete }: Props) {
@@ -36,7 +42,6 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
   const [filterCrop, setFilterCrop] = useState<string>("All");
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
   
-  // Track either an existing planting to edit, or true to create a new historical record
   const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null);
   const [isAddingHistorical, setIsAddingHistorical] = useState(false);
   
@@ -96,7 +101,6 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
 
         <div className="relative w-full sm:w-auto flex justify-end gap-2">
           
-          {/* NEW: Add Historical Record Button */}
           <button 
             onClick={() => setIsAddingHistorical(true)}
             className="flex items-center gap-2 bg-[#7a9a6e] hover:bg-[#a3e635] text-[#1c1a14] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-md"
@@ -258,7 +262,6 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
         </table>
       </div>
 
-      {/* Editing an existing planting */}
       {editingPlanting && (
         <PlantingModal 
           plot={editingPlanting.plot_ids?.length ? MOCK_PLOTS.find(pl => pl.id === editingPlanting.plot_ids![0]) : null}
@@ -272,7 +275,6 @@ export default function HistoricalDatabase({ plantings, onSave, onDelete }: Prop
         />
       )}
 
-      {/* Adding a new "Plot-less" Historical Record */}
       {isAddingHistorical && (
         <PlantingModal 
           plot={null}
