@@ -1,7 +1,7 @@
 name: Supabase Keep-Alive
 on:
   schedule:
-    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+    - cron: '0 0 * * 1,4' # Runs every Monday and Thursday at midnight
   workflow_dispatch: # Allows you to run it manually to test
 
 jobs:
@@ -10,6 +10,6 @@ jobs:
     steps:
       - name: Poke the Database
         run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/plantings?select=id&limit=1" \
+          curl -f -sS -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/plantings?select=id&limit=1" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
